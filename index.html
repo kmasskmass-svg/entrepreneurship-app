@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منصة ريادة الأعمال المتكاملة</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Tajawal','Segoe UI',Arial,sans-serif;
+    background:#0E1A2B;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  header{
+    background:#16283F;
+    border-bottom:1px solid #28405E;
+    padding:10px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    flex-shrink:0;
+  }
+  .title-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .title-row h1{
+    color:#EDF1F6;
+    font-size:16px;
+    font-weight:900;
+    text-align:center;
+  }
+  nav.tabs{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  nav.tabs button{
+    appearance:none;
+    border:1px solid #28405E;
+    background:#122238;
+    color:#9FB0C6;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:700;
+    padding:10px 16px;
+    border-radius:10px;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
+    white-space:nowrap;
+  }
+  nav.tabs button:hover{
+    border-color:#56C2B0;
+    color:#EDF1F6;
+  }
+  nav.tabs button.active{
+    background:#F2A93B;
+    color:#16283F;
+    border-color:#F2A93B;
+  }
+  main{
+    flex:1;
+    position:relative;
+    min-height:0;
+  }
+  iframe{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    border:0;
+    background:#fff;
+    display:none;
+  }
+  iframe.active{
+    display:block;
+  }
+  .loading{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#9FB0C6;
+    font-size:14px;
+    background:#0E1A2B;
+    pointer-events:none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-row">
+    <h1>منصة ريادة الأعمال المتكاملة — ثلاثة تطبيقات في مكان واحد</h1>
+  </div>
+  <nav class="tabs">
+    <button type="button" class="tab-btn active" data-target="frame1">📘 التطبيق جاهز ب120 سؤالاً</button>
+    <button type="button" class="tab-btn" data-target="frame2">🚧 ١٠٠ عقبة في طريق رائد الأعمال</button>
+    <button type="button" class="tab-btn" data-target="frame3">🧭 سجل القرار — محاكي الحالات</button>
+  </nav>
+</header>
+
+<main>
+  <div class="loading" id="loading">جاري التحميل…</div>
+  <iframe id="frame1" class="active" src="app1-quiz-120.html" title="التطبيق جاهز ب120 سؤالاً"></iframe>
+  <iframe id="frame2" src="app2-100-obstacles.html" title="١٠٠ عقبة في طريق رائد الأعمال"></iframe>
+  <iframe id="frame3" src="app3-decision-log.html" title="سجل القرار — محاكي حالات ريادة الأعمال"></iframe>
+</main>
+
+<script>
+  var buttons = document.querySelectorAll('.tab-btn');
+  var frames = document.querySelectorAll('iframe');
+  var loading = document.getElementById('loading');
+
+  buttons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var target = btn.getAttribute('data-target');
+
+      buttons.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+
+      frames.forEach(function(f){
+        if(f.id === target){
+          f.classList.add('active');
+        } else {
+          f.classList.remove('active');
+        }
+      });
+    });
+  });
+
+  // اخفاء رسالة التحميل بعد تحميل الإطار الأول
+  document.getElementById('frame1').addEventListener('load', function(){
+    if(loading) loading.style.display = 'none';
+  });
+</script>
+
+</body>
+</html>

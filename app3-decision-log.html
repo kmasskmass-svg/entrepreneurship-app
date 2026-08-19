@@ -1,0 +1,2508 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سجل القرار — محاكي حالات ريادة الأعمال</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Markazi+Text:wght@500;700&family=Tajawal:wght@400;500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap');
+
+:root{
+  --ink:#26241d;
+  --parchment:#efe7d6;
+  --parchment-dim:#e4dabd;
+  --navy:#1c2b3a;
+  --navy-soft:#28405a;
+  --brass:#a97c34;
+  --brass-bright:#c99a4a;
+  --stamp-red:#9c3f34;
+  --sage:#4f6b52;
+  --line: rgba(28,43,58,0.16);
+  --radius:4px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--parchment);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(28,43,58,0.035) 0px, rgba(28,43,58,0.035) 1px, transparent 1px, transparent 34px);
+  color:var(--ink);
+  font-family:'Tajawal', sans-serif;
+  min-height:100vh;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+
+/* Header */
+header.top{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  border-bottom:3px double var(--navy);
+  padding-bottom:16px;margin-bottom:22px;flex-wrap:wrap;gap:14px;
+}
+.brand-title{
+  font-family:'Markazi Text', serif;
+  font-weight:700;font-size:44px;color:var(--navy);
+  letter-spacing:0.5px;
+  display:flex;align-items:baseline;gap:10px;
+}
+.brand-title small{
+  font-family:'IBM Plex Sans Arabic',sans-serif;
+  font-size:13px;font-weight:400;color:var(--brass);
+  letter-spacing:2px;
+}
+.role-switch{display:flex;gap:0;border:1.5px solid var(--navy);border-radius:var(--radius);overflow:hidden;}
+.role-switch button{
+  border:none;background:transparent;color:var(--navy);
+  font-family:'Tajawal',sans-serif;font-weight:700;font-size:14px;
+  padding:9px 20px;cursor:pointer;transition:.15s;
+}
+.role-switch button.active{background:var(--navy);color:var(--parchment);}
+.role-switch button:not(.active):hover{background:rgba(28,43,58,0.08);}
+
+/* Trainee identity bar */
+.id-bar{
+  display:flex;align-items:center;gap:12px;margin-bottom:20px;
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:10px 16px;
+}
+.id-bar label{font-size:13px;color:var(--navy-soft);font-weight:700;white-space:nowrap;}
+.id-bar input{
+  flex:1;max-width:280px;border:1px solid var(--line);border-radius:3px;
+  padding:8px 10px;font-family:'Tajawal',sans-serif;font-size:14px;background:var(--parchment);
+}
+.id-bar .score-pill{
+  margin-inline-start:auto;font-family:'IBM Plex Sans Arabic',sans-serif;
+  font-size:13px;color:var(--navy);background:var(--parchment-dim);
+  border:1px solid var(--brass);border-radius:20px;padding:6px 14px;font-weight:600;
+}
+
+/* Layout — nav column and case column scroll independently of each other */
+.layout{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;}
+@media (max-width:860px){.layout{grid-template-columns:1fr;}}
+
+/* Mobile: show either the case list OR the open case, never both stacked */
+.back-to-list-btn{display:none;}
+@media (max-width:860px){
+  .layout.case-open .nav-groups{display:none;}
+  .layout:not(.case-open) #caseArea{display:none;}
+  .back-to-list-btn{
+    display:flex;align-items:center;gap:6px;width:100%;margin-bottom:14px;
+    justify-content:center;
+  }
+}
+
+/* Category nav — its own independent scroll area, detached from the case column */
+.nav-groups{
+  position:sticky;top:16px;
+  max-height:calc(100vh - 32px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding-inline-end:6px;
+  scrollbar-gutter:stable;
+}
+@media (max-width:860px){
+  .nav-groups{position:static;max-height:none;overflow-y:visible;}
+}
+
+/* Case column — its own independent scroll area, detached from the nav column */
+#caseArea{
+  position:sticky;top:16px;
+  max-height:calc(100vh - 32px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding-inline-end:6px;
+  scrollbar-gutter:stable;
+}
+@media (max-width:860px){
+  #caseArea{position:static;max-height:none;overflow-y:visible;}
+}
+.group-block{margin-bottom:16px;}
+.group-label{
+  font-family:'IBM Plex Sans Arabic',sans-serif;
+  font-size:11px;letter-spacing:1.5px;color:var(--brass);
+  font-weight:600;margin-bottom:6px;padding-inline-start:4px;
+}
+.case-btn{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:right;
+  background:transparent;border:none;border-inline-start:3px solid transparent;
+  padding:8px 10px;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13.5px;
+  color:var(--ink);border-radius:2px;transition:.12s;
+}
+.case-btn:hover{background:rgba(28,43,58,0.06);}
+.case-btn.active{background:#fff;border-inline-start-color:var(--brass);font-weight:700;}
+.case-num{
+  font-family:'IBM Plex Sans Arabic',sans-serif;font-size:11px;color:var(--navy-soft);
+  background:var(--parchment-dim);border-radius:50%;width:20px;height:20px;
+  display:flex;align-items:center;justify-content:center;flex:none;
+}
+.case-btn.done .case-num{background:var(--sage);color:#fff;}
+.case-btn.scored .case-num{background:var(--brass);color:#fff;}
+.case-btn.locked{opacity:0.45;cursor:not-allowed;}
+.case-btn.locked:hover{background:transparent;}
+.case-btn .lock-ic{margin-inline-start:auto;font-size:12px;flex:none;}
+
+/* Access-code gate overlay (trainee entry control) */
+#traineeView{position:relative;}
+.access-gate{
+  position:absolute;inset:0;z-index:40;
+  background:rgba(28,43,58,0.94);
+  display:flex;align-items:center;justify-content:center;
+  border-radius:var(--radius);
+}
+.access-gate-box{
+  background:var(--parchment);border:1.5px solid var(--brass);border-radius:var(--radius);
+  padding:28px 30px;max-width:380px;width:92%;text-align:center;
+}
+.access-gate-box h3{font-family:'Markazi Text',serif;font-size:24px;color:var(--navy);margin-bottom:6px;}
+.access-gate-box p{font-size:13px;color:var(--navy-soft);margin-bottom:16px;font-family:'IBM Plex Sans Arabic',sans-serif;}
+.access-gate-box input{
+  width:100%;padding:12px;border:1.5px solid var(--line);border-radius:3px;
+  font-family:'IBM Plex Sans Arabic',sans-serif;font-size:20px;text-align:center;
+  letter-spacing:6px;margin-bottom:10px;
+}
+.access-gate-box .err{color:var(--stamp-red);font-size:12.5px;font-family:'IBM Plex Sans Arabic',sans-serif;min-height:16px;margin-bottom:6px;}
+
+/* Locked case notice inside case area */
+.locked-notice{
+  background:#fff;border:1px dashed var(--brass);border-radius:var(--radius);
+  padding:36px 24px;text-align:center;color:var(--navy-soft);
+  font-family:'IBM Plex Sans Arabic',sans-serif;font-size:14px;
+}
+.locked-notice .ic{font-size:30px;margin-bottom:10px;}
+
+/* Share-case button (trainer only, shown atop case header) */
+.share-case-btn{
+  position:absolute;top:16px;left:20px;
+  background:rgba(239,231,214,0.12);color:var(--parchment);border-color:rgba(239,231,214,0.5);
+  font-size:12.5px;padding:7px 14px;
+}
+.share-case-btn:hover{background:rgba(239,231,214,0.22);}
+
+/* Share modal */
+.share-modal-box .btn{width:100%;}
+
+/* Main card */
+.case-card{
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:0;overflow:hidden;
+}
+.case-head{
+  background:var(--navy);color:var(--parchment);padding:20px 24px;
+  position:relative;
+}
+.case-head .eyebrow{
+  font-family:'IBM Plex Sans Arabic',sans-serif;font-size:11px;letter-spacing:2px;
+  color:var(--brass-bright);text-transform:uppercase;margin-bottom:6px;
+}
+.case-head h2{
+  font-family:'Markazi Text',serif;font-weight:700;font-size:30px;margin:0;
+}
+.case-body{padding:22px 24px;}
+.scenario-box{
+  background:var(--parchment);border:1px solid var(--line);border-radius:3px;
+  padding:16px 18px;margin-bottom:18px;font-size:14.5px;line-height:2;
+}
+.data-table{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:13.5px;}
+.data-table td,.data-table th{
+  border:1px solid var(--line);padding:6px 10px;text-align:right;
+  font-family:'IBM Plex Sans Arabic',sans-serif;
+}
+.data-table th{background:var(--parchment-dim);font-weight:600;}
+.section-label{
+  font-weight:700;color:var(--navy-soft);font-size:13px;margin:16px 0 8px;
+  display:flex;align-items:center;gap:8px;
+}
+.section-label::after{content:'';flex:1;height:1px;background:var(--line);}
+
+textarea{
+  width:100%;min-height:130px;border:1.5px solid var(--line);border-radius:3px;
+  padding:12px 14px;font-family:'Tajawal',sans-serif;font-size:14px;resize:vertical;
+  background:var(--parchment);color:var(--ink);
+}
+textarea:focus{outline:none;border-color:var(--brass);}
+.btn-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;align-items:center;}
+.btn{
+  font-family:'Tajawal',sans-serif;font-weight:700;font-size:14px;
+  padding:10px 22px;border-radius:3px;border:1.5px solid var(--navy);
+  cursor:pointer;transition:.15s;background:var(--navy);color:var(--parchment);
+}
+.btn:hover{background:var(--navy-soft);}
+.btn.ghost{background:transparent;color:var(--navy);}
+.btn.ghost:hover{background:rgba(28,43,58,0.06);}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+.reveal{
+  margin-top:20px;border-top:2px dashed var(--brass);padding-top:18px;
+  animation:fadein .4s ease;
+}
+@keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.model-answer{
+  background:#f8f4ea;border:1px solid var(--brass);border-radius:3px;
+  padding:16px 18px;font-size:14.5px;line-height:2;position:relative;
+}
+.model-answer .tag{
+  position:absolute;top:-11px;right:14px;background:var(--brass);color:#fff;
+  font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;
+  font-family:'IBM Plex Sans Arabic',sans-serif;
+}
+.wisdom-box{
+  background:var(--navy);color:var(--parchment);border-radius:3px;
+  padding:16px 18px;margin-top:16px;font-size:14.5px;line-height:2;position:relative;
+  border-inline-start:4px solid var(--brass-bright);
+  font-family:'Markazi Text',serif;font-weight:700;font-size:17px;
+}
+.wisdom-box .tag{
+  position:absolute;top:-11px;right:14px;background:var(--stamp-red);color:#fff;
+  font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;
+  font-family:'IBM Plex Sans Arabic',sans-serif;
+}
+
+/* Stamp */
+.stamp-zone{
+  display:flex;align-items:center;gap:18px;margin-top:20px;flex-wrap:wrap;
+  padding-top:16px;border-top:1px solid var(--line);
+}
+.stamp{
+  width:92px;height:92px;border-radius:50%;
+  border:3px solid var(--stamp-red);color:var(--stamp-red);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:'IBM Plex Sans Arabic',sans-serif;font-weight:600;
+  transform:rotate(-8deg);opacity:0;transition:opacity .3s, transform .3s;
+  flex:none;
+}
+.stamp.show{opacity:0.88;transform:rotate(-8deg) scale(1);}
+.stamp .n{font-size:26px;font-weight:700;line-height:1;}
+.stamp .lbl{font-size:9px;letter-spacing:1px;margin-top:2px;}
+
+.score-input-block{flex:1;min-width:220px;}
+.score-input-block label{font-size:13px;color:var(--navy-soft);font-weight:700;display:block;margin-bottom:6px;}
+.score-input-row{display:flex;align-items:center;gap:8px;}
+.score-input-row input[type=number]{
+  width:70px;padding:8px;border:1.5px solid var(--line);border-radius:3px;
+  font-family:'IBM Plex Sans Arabic',sans-serif;font-size:15px;text-align:center;
+}
+.score-input-row span{color:var(--navy-soft);font-size:13px;}
+
+.status-note{font-size:12.5px;color:var(--navy-soft);margin-top:8px;font-family:'IBM Plex Sans Arabic',sans-serif;}
+
+/* Trainer dashboard */
+.dash-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.dash-toolbar h2{font-family:'Markazi Text',serif;font-size:28px;color:var(--navy);margin:0;}
+.leaderboard{
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px 20px;margin-bottom:20px;
+}
+.leaderboard table{width:100%;border-collapse:collapse;font-size:14px;}
+.leaderboard th{
+  text-align:right;font-family:'IBM Plex Sans Arabic',sans-serif;font-size:11px;
+  letter-spacing:1px;color:var(--brass);border-bottom:1.5px solid var(--navy);padding:6px 10px;
+}
+.leaderboard td{padding:9px 10px;border-bottom:1px solid var(--line);}
+.rank-badge{
+  display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--navy);
+  color:var(--parchment);align-items:center;justify-content:center;font-size:11px;font-weight:700;
+  font-family:'IBM Plex Sans Arabic',sans-serif;
+}
+.sub-row{
+  background:#fff;border:1px solid var(--line);border-radius:3px;padding:14px 16px;
+  margin-bottom:10px;
+}
+.sub-row .meta{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+.sub-row .who{font-weight:700;color:var(--navy);}
+.sub-row .which{font-size:12px;color:var(--brass);font-family:'IBM Plex Sans Arabic',sans-serif;}
+.sub-row .ans{font-size:13.5px;line-height:1.9;background:var(--parchment);border-radius:3px;padding:10px 12px;margin-bottom:8px;}
+.settings-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:8px 4px;border-bottom:1px solid var(--line);font-size:13.5px;
+}
+.settings-row input{width:60px;padding:5px;border:1px solid var(--line);border-radius:3px;text-align:center;font-family:'IBM Plex Sans Arabic';}
+
+.empty-note{
+  text-align:center;padding:40px 20px;color:var(--navy-soft);font-family:'IBM Plex Sans Arabic',sans-serif;
+  font-size:13.5px;
+}
+.tabbtns{display:flex;gap:8px;margin-bottom:16px;}
+.tabbtns button{
+  background:transparent;border:1.5px solid var(--navy);color:var(--navy);
+  padding:7px 16px;border-radius:3px;font-family:'Tajawal';font-weight:700;font-size:13px;cursor:pointer;
+}
+.tabbtns button.active{background:var(--navy);color:var(--parchment);}
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-thumb{background:var(--brass);border-radius:4px;}
+
+/* Letterhead — anchored to the top-right corner */
+.letterhead{
+  display:flex;justify-content:flex-start;align-items:flex-start;gap:18px;
+  padding-bottom:16px;margin-bottom:14px;border-bottom:1px solid var(--line);
+  flex-wrap:wrap;
+}
+.letterhead-text{
+  flex:none;text-align:center;
+  font-family:'IBM Plex Sans Arabic',sans-serif;color:var(--navy);
+}
+.letterhead-text .lh-line{
+  font-size:14px;line-height:1.9;font-weight:600;
+}
+.letterhead-text .lh-line:first-child{font-weight:700;font-size:15px;color:var(--navy-soft);}
+.letterhead-logo{
+  flex:none;width:74px;height:74px;border-radius:6px;margin-inline-start:auto;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background:var(--parchment-dim);border:1px dashed var(--line);
+}
+.letterhead-logo img{width:100%;height:100%;object-fit:contain;}
+.letterhead-logo .ph{font-size:10px;color:var(--navy-soft);text-align:center;font-family:'IBM Plex Sans Arabic',sans-serif;}
+.letterhead-logo.lh-logo-hidden{display:none;}
+
+/* Floating action button (trainer only) */
+.fab-btn{
+  position:fixed;bottom:26px;left:26px;z-index:40;
+  width:60px;height:60px;border-radius:50%;
+  background:var(--navy);color:var(--parchment);border:2px solid var(--brass-bright);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 20px rgba(28,43,58,0.4);cursor:pointer;
+  font-size:26px;transition:.15s;
+}
+.fab-btn:hover{background:var(--navy-soft);transform:scale(1.06);}
+.fab-btn .fab-label{
+  position:absolute;inset-inline-end:70px;top:50%;transform:translateY(-50%);
+  background:var(--navy);color:var(--parchment);padding:6px 12px;border-radius:4px;
+  font-size:12.5px;white-space:nowrap;font-family:'IBM Plex Sans Arabic',sans-serif;
+  opacity:0;pointer-events:none;transition:.15s;
+}
+.fab-btn:hover .fab-label{opacity:1;}
+.fab-progress-overlay{
+  position:fixed;inset:0;background:rgba(28,43,58,0.6);z-index:60;
+  display:flex;align-items:center;justify-content:center;
+}
+.fab-progress-box{
+  background:#fff;border-radius:8px;padding:26px 30px;text-align:center;
+  font-family:'IBM Plex Sans Arabic',sans-serif;color:var(--navy);min-width:220px;
+}
+
+/* Help / usage-guide modal (trainer) */
+.help-toc{
+  display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;padding-bottom:14px;
+  border-bottom:1px dashed var(--line);
+}
+.help-toc a{
+  font-family:'IBM Plex Sans Arabic',sans-serif;font-size:12px;font-weight:600;
+  color:var(--navy);background:var(--parchment);border:1px solid var(--line);
+  border-radius:20px;padding:5px 12px;text-decoration:none;transition:.12s;
+}
+.help-toc a:hover{background:var(--brass);color:#fff;border-color:var(--brass);}
+.help-section{margin-bottom:22px;padding-bottom:18px;border-bottom:1px dashed var(--line);}
+.help-section:last-child{border-bottom:none;}
+.help-section h4{
+  font-family:'Markazi Text',serif;font-size:20px;color:var(--navy);
+  display:flex;align-items:center;gap:8px;margin-bottom:8px;
+}
+.help-section h4 .num{
+  background:var(--navy);color:var(--parchment);border-radius:50%;
+  width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Sans Arabic',sans-serif;font-size:13px;flex:none;
+}
+.help-section p, .help-section li{
+  font-size:13.5px;line-height:2;color:var(--ink);font-family:'Tajawal',sans-serif;
+}
+.help-section ul, .help-section ol{margin-inline-start:22px;margin-bottom:8px;}
+.help-section .tip{
+  background:var(--parchment);border-inline-start:3px solid var(--sage);
+  padding:8px 12px;font-size:12.5px;margin-top:6px;border-radius:2px;
+  font-family:'IBM Plex Sans Arabic',sans-serif;
+}
+.help-section .warn{
+  background:#fdf3ee;border-inline-start:3px solid var(--stamp-red);
+  padding:8px 12px;font-size:12.5px;margin-top:6px;border-radius:2px;
+  font-family:'IBM Plex Sans Arabic',sans-serif;
+}
+
+/* Identity bar (trainee) */
+.id-bar{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;
+}
+@media (max-width:860px){.id-bar{grid-template-columns:1fr 1fr;}}
+.id-field label{
+  display:block;font-size:12px;color:var(--navy-soft);font-weight:700;margin-bottom:5px;
+  font-family:'IBM Plex Sans Arabic',sans-serif;
+}
+.id-field label .req{color:var(--stamp-red);}
+.id-field input{
+  width:100%;border:1px solid var(--line);border-radius:3px;
+  padding:8px 10px;font-family:'Tajawal',sans-serif;font-size:14px;background:var(--parchment);
+}
+.id-field input:invalid{}
+.id-bar-footer{
+  grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:8px;margin-top:2px;
+}
+.score-pill{
+  font-family:'IBM Plex Sans Arabic',sans-serif;
+  font-size:13px;color:var(--navy);background:var(--parchment-dim);
+  border:1px solid var(--brass);border-radius:20px;padding:6px 14px;font-weight:600;
+}
+.id-missing-note{font-size:12.5px;color:var(--stamp-red);font-family:'IBM Plex Sans Arabic',sans-serif;}
+
+/* Modal */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(28,43,58,0.55);
+  display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;
+}
+.modal-box{
+  background:#fff;border-radius:6px;padding:26px 24px;max-width:340px;width:100%;
+  box-shadow:0 10px 40px rgba(0,0,0,0.25);
+}
+.modal-box h3{
+  font-family:'Markazi Text',serif;font-size:24px;color:var(--navy);margin:0 0 14px;
+}
+.modal-box input{
+  width:100%;border:1.5px solid var(--line);border-radius:3px;padding:10px 12px;
+  font-family:'Tajawal',sans-serif;font-size:15px;margin-bottom:10px;background:var(--parchment);
+  letter-spacing:2px;text-align:center;
+}
+.modal-box .err{color:var(--stamp-red);font-size:12.5px;font-family:'IBM Plex Sans Arabic',sans-serif;min-height:16px;margin-bottom:6px;}
+
+.settings-block{margin-bottom:22px;padding-bottom:18px;border-bottom:1px dashed var(--line);}
+.settings-block:last-child{border-bottom:none;}
+.settings-block h4{
+  font-family:'Markazi Text',serif;font-size:20px;color:var(--navy);margin:0 0 10px;
+}
+.lh-edit-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.lh-edit-row input[type=text]{
+  flex:1;border:1px solid var(--line);border-radius:3px;padding:7px 10px;
+  font-family:'Tajawal',sans-serif;font-size:13.5px;
+}
+.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13.5px;color:var(--navy);}
+.logo-preview{
+  width:60px;height:60px;border-radius:6px;background:var(--parchment-dim);
+  border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;
+}
+.logo-preview img{width:100%;height:100%;object-fit:contain;}
+
+/* Glossary term highlighting */
+.term-highlight{
+  color:var(--navy-soft);font-weight:700;cursor:help;
+  border-bottom:1.5px dotted var(--brass);
+  transition:.12s;
+}
+.term-highlight:hover, .term-highlight.term-active{
+  color:var(--stamp-red);border-bottom-color:var(--stamp-red);
+}
+.case-head .term-highlight, .wisdom-box .term-highlight{
+  color:var(--brass-bright);border-bottom-color:var(--brass-bright);
+}
+.case-head .term-highlight:hover, .case-head .term-highlight.term-active,
+.wisdom-box .term-highlight:hover, .wisdom-box .term-highlight.term-active{
+  color:#fff;border-bottom-color:#fff;
+}
+.term-tooltip{
+  position:absolute;z-index:80;max-width:300px;
+  background:var(--navy);color:var(--parchment);border-radius:6px;
+  padding:12px 14px;box-shadow:0 8px 26px rgba(0,0,0,0.3);
+  font-family:'IBM Plex Sans Arabic',sans-serif;font-size:12.5px;line-height:1.9;
+  border-inline-start:3px solid var(--brass-bright);
+  display:none;
+}
+.term-tooltip.show{display:block;}
+.term-tooltip .tt-term{
+  font-family:'Markazi Text',serif;font-weight:700;font-size:16px;color:var(--brass-bright);
+  margin-bottom:5px;display:block;
+}
+.glossary-item{
+  border-bottom:1px solid var(--line);padding:10px 0;
+}
+.glossary-item:last-child{border-bottom:none;}
+.glossary-item .g-term{
+  font-family:'Markazi Text',serif;font-weight:700;font-size:17px;color:var(--navy);margin-bottom:4px;
+}
+.glossary-item .g-def{font-size:13px;line-height:1.9;color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="letterhead" id="letterheadZone" style="display:none;">
+    <div class="letterhead-text" id="letterheadText"></div>
+    <div class="letterhead-logo" id="letterheadLogo"><span class="ph">الشعار</span></div>
+  </div>
+
+  <header class="top">
+    <div class="brand-title">سجل القرار <small>منصة عرض حالات ريادة الأعمال — ١٠٠ قضية</small></div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button class="btn ghost" id="btnGlossary" style="padding:8px 16px;font-size:13px;">📘 قاموس المصطلحات</button>
+      <button class="btn ghost" id="btnConfig" style="padding:8px 16px;font-size:13px;">⚙️ التهيئة</button>
+    </div>
+  </header>
+
+  <!-- GLOSSARY MODAL -->
+  <div class="modal-overlay" id="glossaryModal" style="display:none;">
+    <div class="modal-box" style="max-width:640px;max-height:82vh;overflow-y:auto;text-align:right;">
+      <h3 style="margin-bottom:4px;">قاموس المصطلحات</h3>
+      <div class="status-note" style="margin-bottom:14px;">مصطلحات مالية وريادية ترد في الحالات، مع تعريف مبسّط لكل منها.</div>
+      <div id="glossaryList"></div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn ghost" id="glossaryCloseBtn">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIG MODAL (letterhead / logo) -->
+  <div class="modal-overlay" id="configModal" style="display:none;">
+    <div class="modal-box" style="max-width:520px;max-height:86vh;overflow-y:auto;text-align:right;">
+      <h3 style="margin-bottom:4px;">التهيئة — ترويسة التطبيق والشعار</h3>
+      <div id="configBody"></div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn ghost" id="configCloseBtn">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CASE BROWSER (presenter view) -->
+  <div class="layout" id="caseLayout">
+    <nav class="nav-groups" id="navGroups"></nav>
+    <div id="caseArea"></div>
+  </div>
+
+  <!-- FAB: PDF export -->
+  <div class="fab-btn" id="pdfFab" title="تصدير الحالات كملف PDF">
+    <span class="fab-label">تصدير الحالات كملف PDF</span>
+    <span>📖</span>
+  </div>
+
+  <!-- Share case / solution modal -->
+  <div class="modal-overlay" id="shareModal" style="display:none;">
+    <div class="modal-box share-modal-box" style="max-width:400px;text-align:right;">
+      <h3 style="margin-bottom:4px;">مشاركة مع المتدربين</h3>
+      <div class="status-note" style="margin-bottom:16px;">أرسل النص جاهزًا لقروب واتساب أو تيليجرام، أو انسخه للصقه في أي مكان.</div>
+      <div class="btn-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+        <button class="btn" id="shareCopyBtn" style="width:100%;">📋 نسخ النص</button>
+        <button class="btn ghost" id="shareWaBtn" style="width:100%;">🟢 مشاركة عبر واتساب</button>
+        <button class="btn ghost" id="shareTgBtn" style="width:100%;">🔵 مشاركة عبر تيليجرام</button>
+        <button class="btn ghost" id="shareCardBtn" style="width:100%;">🖼️ مشاركة نفس البيانات كبطاقة (صورة)</button>
+        <button class="btn ghost" id="shareCancelBtn" style="width:100%;">إلغاء</button>
+      </div>
+      <div class="status-note" id="shareNote" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- PDF export options modal -->
+  <div class="modal-overlay" id="pdfExportModal" style="display:none;">
+    <div class="modal-box" style="max-width:420px;text-align:right;">
+      <h3 style="margin-bottom:4px;">تصدير الحالات كملف PDF</h3>
+      <div class="status-note" style="margin-bottom:16px;">اختر نوع النسخة المطلوب تصديرها:</div>
+      <div class="btn-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+        <button class="btn" id="pdfExportWithSolution" style="width:100%;">📖 نسخة كاملة مع الحل النموذجي والحكمة</button>
+        <button class="btn ghost" id="pdfExportNoSolution" style="width:100%;">📝 نسخة تدريبية بدون حل (مربع كتابة للمتدرب)</button>
+        <button class="btn ghost" id="pdfExportCancel" style="width:100%;">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAB: help / detailed usage guide -->
+  <div class="fab-btn" id="helpFab" style="bottom:96px;" title="دليل استخدام التطبيق">
+    <span class="fab-label">دليل الاستخدام التفصيلي</span>
+    <span>❔</span>
+  </div>
+
+  <!-- FAB: contact the app developer -->
+  <div class="fab-btn" id="contactFab" style="bottom:166px;" title="التواصل مع معد التطبيق">
+    <span class="fab-label">التواصل مع معد التطبيق</span>
+    <span>✉️</span>
+  </div>
+
+  <!-- Contact developer modal -->
+  <div class="modal-overlay" id="contactModal" style="display:none;">
+    <div class="modal-box" style="max-width:380px;text-align:center;">
+      <h3 style="margin-bottom:10px;">التواصل مع معد التطبيق</h3>
+      <div style="font-family:'Markazi Text',serif;font-size:22px;font-weight:700;color:var(--navy);margin-bottom:6px;">كليب بن أحمد الزهراني</div>
+      <div class="status-note" style="margin-bottom:16px;">للمقترحات والملاحظات</div>
+      <a href="mailto:kmasskmass@gmail.com" style="display:block;background:var(--parchment);border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-family:'IBM Plex Sans Arabic',sans-serif;font-size:14px;color:var(--navy);text-decoration:none;margin-bottom:16px;direction:ltr;">kmasskmass@gmail.com</a>
+      <div class="btn-row" style="justify-content:center;">
+        <button class="btn ghost" id="contactCloseBtn">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help / usage guide modal -->
+  <div class="modal-overlay" id="helpModal" style="display:none;">
+    <div class="modal-box help-modal-box" style="max-width:760px;max-height:86vh;overflow-y:auto;text-align:right;">
+      <h3 style="margin-bottom:4px;">دليل استخدام التطبيق — بالتفصيل الممل</h3>
+      <div class="status-note" style="margin-bottom:14px;">مرجع شامل لكل ميزة في «سجل القرار»، موجّه لمدرب المادة. استخدم فهرس الأقسام للتنقل السريع.</div>
+      <div id="helpTOC" class="help-toc"></div>
+      <div id="helpBody"></div>
+      <div class="btn-row" style="margin-top:14px;">
+        <button class="btn ghost" id="helpCloseBtn">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared glossary term tooltip -->
+  <div class="term-tooltip" id="termTooltip"></div>
+
+</div>
+
+<script>
+/* ---------------- DATA ---------------- */
+const CASES = [
+{
+"id": 1,
+"g": "السيولة",
+"title": "شركة ديكور «لمسة»",
+"scenario": "الإيرادات السنوية 1,200,000 ريال وصافي الربح المُعلن 180,000 ريال، لكن الرصيد النقدي الفعلي 15,000 ريال فقط. مستحقات لدى العملاء 320,000، دفعة مقدمة لمورد صيني عالقة 150,000، مخزون راكد 250,000، وقرض يُستحق خلال 30 يوماً بقيمة 100,000.",
+"q": "ما الإجراءات العاجلة التي تقترحها لتفادي التوقف عن الدفع خلال 30 يوماً؟",
+"model": "تفعيل خصم سداد مبكر (2% مقابل الدفع خلال 7 أيام بدل 60)، والتفاوض مع المورد الصيني على استرجاع جزء من الدفعة أو تسريع الشحن، وتصفية المخزون الراكد بعروض تخفيض لتحويله لنقد فوري حتى لو بهامش منخفض، وتجميد أي مشتريات جديدة غير ضرورية.",
+"h": "الربح الدفتري لا يدفع الرواتب؛ النقد وحده يفعل — تابع التدفق النقدي أسبوعياً لا شهرياً فقط."
+},
+{
+"id": 2,
+"g": "السيولة",
+"title": "عيادة أسنان تعمل بالتأمين",
+"scenario": "الإيرادات الشهرية المفوترة لشركات التأمين 400,000 ريال، لكن السداد يتأخر 45-90 يوماً بينما الرواتب والمستلزمات تُدفع شهرياً، مما يخلق فجوة سيولة تصل إلى 300,000 ريال.",
+"q": "كيف تسد العيادة هذه الفجوة دون التوقف عن الدفع؟",
+"model": "التفاوض مع البنك على تمويل فواتير (Factoring) بضمان مستحقات التأمين المعلّقة، وتنويع مصادر الدخل بخدمات تُدفع نقداً فوراً لا يغطيها التأمين (تبييض أسنان، تقويم تجميلي).",
+"h": "لا تربط كل إيراداتك بجهة دفع واحدة بطيئة، مهما بدت آمنة؛ التنويع في مصادر التحصيل حماية سيولة لا رفاهية."
+},
+{
+"id": 3,
+"g": "السيولة",
+"title": "مصنع أثاث يبيع بالأجل",
+"scenario": "المبيعات السنوية 3,000,000 ريال بهامش ربح 15%، لكن 70% من المبيعات تُسدَّد بشيكات آجلة 90 يوماً، مما اضطر المصنع لتأخير رواتب العمال مرتين خلال العام رغم أنه «رابح دفترياً».",
+"q": "ما الحل لتفادي تكرار أزمة الرواتب؟",
+"model": "خصم الشيكات الآجلة لدى البنك (Discounting) مقابل عمولة للحصول على نقد فوري، واشتراط دفعة مقدمة 30% نقداً من كل عميل جديد قبل بدء التصنيع.",
+"h": "شروط الدفع جزء من التسعير لا تفصيل إداري؛ بيع بالأجل بلا تسعير للأجل هو تمويل مجاني لعميلك على حسابك."
+},
+{
+"id": 4,
+"g": "السيولة",
+"title": "متجر إلكتروني يبيع بالتقسيط",
+"scenario": "المبيعات الشهرية 200,000 ريال عبر تابي/تمارا، حيث يحتجز مزود التقسيط نحو 5-7% ويحوّل الباقي خلال أيام، بينما يدفع التاجر تكلفة البضاعة كاملة مقدماً للمورد.",
+"q": "كيف يحمي التاجر هامش ربحه في هذا الترتيب؟",
+"model": "حساب هامش الربح بعد خصم عمولة التقسيط بدقة قبل التسعير النهائي، والتفاوض مع الموردين على شروط دفع آجلة تتوازى مع دورة تحصيل التقسيط بدل الدفع الفوري الكامل.",
+"h": "سعّر منتجك على صافي ما يصلك بعد كل عمولة وسيط، لا على السعر المعروض للعميل."
+},
+{
+"id": 5,
+"g": "السيولة",
+"title": "مقاولات صغيرة ومشروع حكومي",
+"scenario": "عقد حكومي بقيمة 2,000,000 ريال يُصرف على دفعات مرتبطة بإنجاز مراحل، ويتأخر اعتماد كل دفعة إدارياً 60 يوماً في المتوسط.",
+"q": "كيف تُدار السيولة في مشروع بهذا النمط؟",
+"model": "حجز نسبة من رأس المال كاحتياطي سيولة مستقل لا يُستخدم في مشاريع أخرى قبل بدء أي عقد حكومي، مع تجنّب الالتزام بمشاريع موازية تعتمد على تدفق هذا العقد بالذات.",
+"h": "حجم العقد لا يعني أمانه المالي؛ قيّم أي عقد بجدول دفعاته لا برقمه الإجمالي فقط."
+},
+{
+"id": 6,
+"g": "نقطة التعادل",
+"title": "مقهى تخصصي بحي سكني",
+"scenario": "تكاليف ثابتة شهرية 28,500 ريال (إيجار 12,000+رواتب 15,000+تراخيص 1,500). تكلفة الكوب المتغيرة 5 ريال، وسعر البيع 18 ريال.",
+"q": "احسب نقطة التعادل الشهرية، وما الحل إن تعذّر تحقيقها؟",
+"model": "هامش المساهمة = 18-5 = 13 ريال. نقطة التعادل = 28,500 ÷ 13 ≈ 2,192 كوباً شهرياً (٧٣ كوباً يومياً). إن تعذّر ذلك: خفض التكاليف الثابتة بمساحة أصغر، أو رفع هامش المساهمة ببيع منتجات مكمّلة بهامش أعلى.",
+"h": "لا تفتح مشروعاً قبل أن تعرف رقماً واحداً بدقة: كم يجب أن تبيع يومياً لتغطي تكاليفك فقط."
+},
+{
+"id": 7,
+"g": "نقطة التعادل",
+"title": "أكاديمية لغة إنجليزية أونلاين",
+"scenario": "تكاليف ثابتة شهرية 18,000 ريال (منصة 3,000+رواتب مدربين 10,000+تسويق 5,000). سعر الكورس 800 ريال، والتكلفة المتغيرة 40 ريال.",
+"q": "احسب نقطة التعادل، وماذا يعني الرقم استراتيجياً؟",
+"model": "هامش المساهمة = 760 ريال. نقطة التعادل = 18,000÷760 ≈ 24 طالباً شهرياً فقط. لأن الرقم منخفض نسبياً، يمكن التوسع بأمان في الإنفاق التسويقي بعد تجاوزه بثبات لثلاثة أشهر متتالية.",
+"h": "نقطة تعادل منخفضة ليست إنجازاً نهائياً بل ترخيص للتوسع الحذر، لا للاسترخاء."
+},
+{
+"id": 8,
+"g": "نقطة التعادل",
+"title": "مغسلة سيارات متنقلة",
+"scenario": "تكاليف ثابتة شهرية 10,000 ريال (تقسيط سيارة 4,000+وقود وصيانة 2,000+راتب عامل 4,000). سعر الغسلة 60 ريال، وتكلفتها المتغيرة 12 ريال.",
+"q": "احسب نقطة التعادل، وهل هي قابلة للتحقيق فعلياً بعامل واحد؟",
+"model": "هامش المساهمة = 48 ريال. نقطة التعادل = 10,000÷48 ≈ 209 غسلة شهرياً (٧ غسلات يومياً). السؤال الحقيقي: هل طاقة عامل واحد تكفي لتنفيذ 7 غسلات كاملة يومياً؟ إن لم تكن كافية فالمشكلة إنتاجية لا مالية فقط.",
+"h": "نقطة التعادل رقم مالي، لكن تحقيقها سؤال تشغيلي؛ لا تكتفِ بالحساب دون اختبار الطاقة الفعلية."
+},
+{
+"id": 9,
+"g": "نقطة التعادل",
+"title": "مطبخ سحابي للوجبات الصحية",
+"scenario": "تكاليف ثابتة شهرية 28,000 ريال. سعر الوجبة 35 ريال، وتطبيق التوصيل يخصم عمولة 25% فيصل صافي 26.25 ريال، ناقص تكلفة المكونات 12 ريال.",
+"q": "احسب نقطة التعادل، وكيف يقلل المطعم أثر عمولة التطبيق؟",
+"model": "هامش المساهمة = 14.25 ريال. نقطة التعادل = 28,000÷14.25 ≈ 1,965 وجبة شهرياً (٦٥ وجبة يومياً). الحل: تفعيل قناة بيع مباشرة عبر واتساب أو موقع خاص لتقليل الاعتماد الكامل على عمولة 25%.",
+"h": "كل وسيط يقتطع من هامشك يجب أن يقابله جهد موازٍ لبناء قناة مباشرة، وإلا أصبحت تعمل لصالحه لا لصالحك."
+},
+{
+"id": 10,
+"g": "نقطة التعادل",
+"title": "مركز لياقة بدنية (Boutique Gym)",
+"scenario": "تكاليف ثابتة شهرية 38,000 ريال. اشتراك العميل 350 ريال شهرياً، وتكلفته المتغيرة 20 ريال.",
+"q": "احسب نقطة التعادل، ثم أعد حسابها إذا قدّم النادي باقة نصف سنوية بخصم 15%.",
+"model": "هامش المساهمة = 330 ريال. نقطة التعادل = 38,000÷330 ≈ 115 مشتركاً. مع خصم 15% يصبح الاشتراك الفعلي 297.5 ريال، وهامش المساهمة 277.5 ريال، فترتفع نقطة التعادل إلى نحو 137 مشتركاً — أي يجب تعويض الخصم بزيادة عدد المشتركين لا الاكتفاء بالسعر الأعلى وحده.",
+"h": "كل خصم تعرضه يرفع نقطة تعادلك فعلياً؛ اربط أي عرض تخفيض بحساب أثره على العدد المطلوب لا على الإيراد الظاهري فقط."
+},
+{
+"id": 11,
+"g": "بوابات الدفع",
+"title": "متجر مستلزمات أطفال",
+"scenario": "500 طلب شهرياً بمتوسط 250 ريال (إجمالي 125,000). 60% من العملاء يدفعون بمدى (رسوم تقريبية 1.75%+1 ريال) و40% ببطاقات ائتمانية (2.75%+1 ريال) عبر مزود مثل ميسر أو تاب.",
+"q": "احسب التكلفة الشهرية التقريبية لمعاملات الدفع، وما القرار الأنسب لمتجر ناشئ؟",
+"model": "مدى: 300×(250×1.75%+1)=1,612.5 ريال. ائتمانية: 200×(250×2.75%+1)=1,575 ريال. الإجمالي ≈3,187.5 ريال (نحو 2.55% من المبيعات). للمتجر الناشئ، مزود بلا رسوم تأسيس (مثل ميسر أو تاب) أنسب من مزود يفرض رسوم تأسيس مرتبطة بحجم المبيعات.",
+"h": "عمولة الدفع تكلفة تشغيل ثابتة كالإيجار تقريباً؛ احسبها كنسبة من الإيراد لا كرقم صغير مهمل."
+},
+{
+"id": 12,
+"g": "بوابات الدفع",
+"title": "صالون تجميل بجهاز نقاط بيع",
+"scenario": "الخيار الأول: جهاز POS بنكي تقليدي بعمولة مدى تصل حتى 0.8% وبحد أقصى 40 ريالاً للعملية. الخيار الثاني: تطبيق نقاط بيع عبر الجوال بعمولة أعلى نسبياً لكن مرونة أكبر.",
+"q": "أي خيار أنسب لصالون بمتوسط فاتورة 150-300 ريال؟ ولماذا؟",
+"model": "الجهاز البنكي التقليدي أوفر هنا لأن حد الـ40 ريالاً الأقصى على مدى يحمي من ارتفاع العمولة النسبية عند الفواتير المرتفعة، بينما تطبيق الجوال أنسب لبائع متجول بفواتير منخفضة يحتاج مرونة تنقل.",
+"h": "لا يوجد مزود دفع «الأفضل مطلقاً»؛ الأنسب يُحدَّد بمتوسط قيمة فاتورتك أنت لا بالسعر المعلن وحده."
+},
+{
+"id": 13,
+"g": "بوابات الدفع",
+"title": "منصة اشتراكات رقمية متكررة",
+"scenario": "المنصة تحتاج دعم «الدفع المتكرر» الشهري التلقائي، وتختلف البوابات في نسبة فشل التجديد التلقائي والرسوم الإضافية عند إعادة المحاولة.",
+"q": "ما المعيار الأهم عند المقارنة بين البوابات هنا؟",
+"model": "موثوقية التجديد التلقائي (نسبة فشل منخفضة) قد تكون أهم من نسبة العمولة وحدها، لأن فقدان اشتراك بسبب خلل تقني يكلف أكثر من فرق بسيط في العمولة — يجب حساب «تكلفة فقدان الاشتراك» لا العمولة فقط.",
+"h": "في نماذج الاشتراك، الموثوقية التقنية بند مالي لا تفصيل تقني؛ فشل صامت في الفوترة يخسّرك عميلاً لن يشتكي، بل يختفي فقط."
+},
+{
+"id": 14,
+"g": "بوابات الدفع",
+"title": "بائع أثاث مستعمل عبر انستغرام",
+"scenario": "يستخدم البائع رابط دفع (Payment Link) لإرسال فاتورة مباشرة عبر واتساب دون متجر إلكتروني، مقابل عمولة على كل رابط.",
+"q": "قارن هذا الخيار بالتحويل البنكي المباشر المجاني.",
+"model": "رابط الدفع يوفر توثيقاً رسمياً للعملية وضماناً أعلى للتحصيل مقابل عمولة بسيطة، بينما التحويل البنكي المباشر مجاني لكنه يحمل مخاطر عدم توثيق العملية أو تراجع العميل عن الدفع بعد الاستلام — القرار يعتمد على قيمة الصفقة ومستوى الثقة مع العميل.",
+"h": "أرخص وسيلة دفع ليست دائماً الأوفر؛ تكلفة غياب التوثيق قد تفوق عمولة الوسيط عند أول نزاع."
+},
+{
+"id": 15,
+"g": "بوابات الدفع",
+"title": "متجر يبيع لعملاء دوليين",
+"scenario": "عند قبول بطاقات دولية تُضاف رسوم تحويل عملة (FX fee) فوق عمولة المعاملة العادية.",
+"q": "كيف يقلل المتجر هذه التكلفة الإضافية؟",
+"model": "البحث عن بوابة دفع تدعم التسعير متعدد العملات لتفادي رسوم التحويل المزدوجة، مقابل بديل أبسط وهو تسعير المنتجات بالريال فقط وترك تحويل العملة لبنك العميل — الأبسط تقنياً لكنه قد يقلل تحويلات العملاء الدوليين.",
+"h": "التوسع الدولي يخفي تكاليف غير ظاهرة في الشاشة الأولى؛ اقرأ بنود العمولة الدقيقة قبل استهداف سوق جديد."
+},
+{
+"id": 16,
+"g": "عكس الهندسة",
+"title": "تطبيق توصيل طعام محلي",
+"scenario": "التطبيق يربح من عمولة المطاعم (15-30%)، رسوم توصيل العميل، اشتراك عضوية شهرية، وإعلانات ظهور مميز.",
+"q": "ما أكبر بند يلتهم الميزانية التشغيلية، ولماذا؟",
+"model": "حوافز السائقين وقت الذروة والتسويق الرقمي لاكتساب عملاء جدد — غالباً أكبر بندين تشغيليين في شركات التوصيل الناشئة، لأن التطبيق يحتاج دعم طرفي السوق (السائق والعميل) معاً في آنٍ واحد.",
+"h": "في أي منصة وسيطة، إيرادات الواجهة لا تكشف تكاليف الخلفية؛ ادرس النموذج بالكامل قبل الحكم على ربحيته."
+},
+{
+"id": 17,
+"g": "عكس الهندسة",
+"title": "منصة حجز مواعيد للعيادات",
+"scenario": "المنصة تفرض اشتراكاً شهرياً ثابتاً من كل عيادة بدل عمولة على كل حجز فردي.",
+"q": "لماذا اختارت هذه المنصات نموذج الاشتراك بدل العمولة؟",
+"model": "لأن قيمة الحجز الفردي صغيرة جداً لتبرير تحصيل عمولة منطقية عليها، بعكس تطبيقات التوصيل ذات القيمة الأعلى للطلب الواحد — الاشتراك الشهري يمنح المنصة إيراداً ثابتاً ومتوقعاً بغض النظر عن عدد الحجوزات الفعلي.",
+"h": "نموذج التسعير يجب أن يتبع قيمة المعاملة الواحدة؛ عمولة صغيرة على معاملة صغيرة لا تُبنى عليها شركة."
+},
+{
+"id": 18,
+"g": "عكس الهندسة",
+"title": "متجر إلكتروني على منصة سلة/زد",
+"scenario": "مزود المنصة يربح من اشتراك شهري + عمولة بوابة الدفع المدمجة + رسوم إضافات وتطبيقات.",
+"q": "قارن بين متجر مستقل ومتجر على منصة جاهزة من حيث التكلفة والتحكم.",
+"model": "المتجر المستقل يتطلب تكلفة تطوير أعلى مقابل تحكم كامل بدون قيود، بينما المتجر على منصة جاهزة يقلل التكلفة الشهرية ويسرّع الإطلاق لكنه يقيّد التخصيص ويجعل التاجر معتمداً على طرف ثالث في البنية التحتية والتسعير المستقبلي.",
+"h": "السرعة في الإطلاق تُشترى دائماً بثمن استقلالية لاحقة؛ اعرف الثمن قبل التوقيع لا بعد النمو."
+},
+{
+"id": 19,
+"g": "عكس الهندسة",
+"title": "تطبيق نقل تشاركي محلي",
+"scenario": "يربح التطبيق من عمولة على كل رحلة ورسوم إضافية وقت الذروة، لكنه يخسر غالباً في سنواته الأولى رغم نمو المستخدمين.",
+"q": "لماذا تخسر هذه التطبيقات رغم النمو؟",
+"model": "بسبب الدعم المالي المكثف لجذب السائقين والركاب معاً في وقت واحد (معضلة السوق ذي الوجهين)، إذ يجب دعم أحد الطرفين ماديّاً حتى ينضم الطرف الآخر، وهذا يستهلك هامش الربح لسنوات قبل الوصول لحجم يحقق وفورات الحجم.",
+"h": "نمو المستخدمين مؤشر غرور إن لم يترجم لربحية؛ اسأل دائماً: هل هذا النمو يُموَّل من الإيراد أم من رأس المال؟"
+},
+{
+"id": 20,
+"g": "عكس الهندسة",
+"title": "منصة بيع دورات تدريبية",
+"scenario": "تربح المنصة من عمولة على كل عملية بيع دورة + رسوم استضافة الفيديو + خدمات تسويق وشهادات للمدرّب.",
+"q": "قارن هذا النموذج ببيع الدورة عبر موقع خاص وبوابة دفع مباشرة.",
+"model": "المنصة الوسيطة تمنح المدرّب وصولاً أسرع لجمهور جاهز مقابل التنازل عن نسبة من الإيراد واستقلالية أقل، بينما الموقع الخاص يمنح هامش ربح أعلى واستقلالية كاملة لكنه يتطلب من المدرّب بناء جمهوره وقنوات تسويقه بنفسه من الصفر.",
+"h": "الوصول الجاهز لجمهور له ثمن دائم لا مرة واحدة؛ قيّم الوسيط بنسبة ما يأخذه مدى الحياة لا بسهولة البداية معه."
+},
+{
+"id": 21,
+"g": "المستثمر الشرس",
+"title": "تطبيق تتبع نفقات الأسرة",
+"scenario": "السوق المستهدف مليون مستخدم محتمل، والتطبيق الأساسي مجاني بالكامل.",
+"q": "كيف يربح التطبيق من قاعدة مستخدمين مجانية؟",
+"model": "نموذج Freemium واضح: الميزات الأساسية مجانية لجذب قاعدة عريضة، بينما التقارير المتقدمة والتنبيهات الذكية وربط الحسابات البنكية تكون بمقابل اشتراك شهري صغير — يوازن بين النمو السريع والإيراد المستدام.",
+"h": "المجاني ليس نموذج عمل بحد ذاته، بل قناة اكتساب؛ يجب أن تعرف من اليوم الأول أين ستضع باب الدفع."
+},
+{
+"id": 22,
+"g": "المستثمر الشرس",
+"title": "خدمة صيانة أجهزة منزلية عند الطلب",
+"scenario": "الطلب على الخدمة يتذبذب موسمياً، وهناك قلق من انخفاض حاد في أشهر الصيف.",
+"q": "كيف يضمن المشروع استدامته رغم التذبذب الموسمي؟",
+"model": "حساب نقطة تعادل تقريبية يومية، وتنويع الخدمة موسمياً (صيانة تكييف في الصيف، سخانات وتدفئة في الشتاء) لتفادي فترات الركود بدل الاعتماد على خدمة واحدة طوال العام.",
+"h": "أي موسمية متوقعة يجب أن تُخطَّط لها مسبقاً كجزء من النموذج، لا أن تُعالج كأزمة طارئة كل عام."
+},
+{
+"id": 23,
+"g": "المستثمر الشرس",
+"title": "منتج غذائي صحي (وجبات خفيفة)",
+"scenario": "عند سؤاله عن أقرب منافس، يميل المؤسس للإجابة العامة «منتجنا أفضل وأصح».",
+"q": "ما الإجابة الأقوى لسؤال «لماذا سيختارك العميل بدل المنافس»؟",
+"model": "تجنّب الإجابة العامة والتركيز على ميزة تنافسية قابلة للقياس: سعر أقل بنسبة محددة، مكوّن حصري غير متوفر لدى المنافس، أو قناة توزيع لم يستغلها المنافس بعد — الأرقام والتحديد أقوى من الادعاء العام بالجودة.",
+"h": "من لا يستطيع تلخيص ميزته التنافسية برقم أو تفصيل ملموس، غالباً لا يملك ميزة تنافسية أصلاً."
+},
+{
+"id": 24,
+"g": "المستثمر الشرس",
+"title": "منصة تأجير معدات بناء بين المقاولين",
+"scenario": "يعرض «المستثمر» تمويلاً كاملاً مقابل 30% من الشركة فوراً في وسط العرض.",
+"q": "كيف يتعامل المؤسس مع عرض كهذا دون رفض أو قبول متسرّع؟",
+"model": "عدم القبول أو الرفض الفوري، بل طرح سؤال مقابل واضح: ما القيمة المضافة غير المالية (شبكة علاقات، خبرة تشغيلية، عقود قائمة) التي يقدمها هذا المستثمر لتبرير نسبة 30%؟ — يحوّل الموقف من رد فعل عاطفي إلى تفاوض مبني على القيمة.",
+"h": "أي حصة من شركتك تُمنح مقابل قيمة مضافة واضحة، لا مقابل الضغط النفسي للحظة العرض."
+},
+{
+"id": 25,
+"g": "المستثمر الشرس",
+"title": "منصة ربط حرفيين يدويين بالعملاء",
+"scenario": "المنصة وسيطة بين حرفيين مستقلين وعملاء لا يعرفونهم مسبقاً.",
+"q": "كيف تضمن المنصة جودة الحرفيين المسجلين وثقة العملاء؟",
+"model": "نظام تقييم من العملاء بعد كل خدمة، فترة تجريبية لكل حرفي جديد قبل فتح المجال الكامل له، وضمان استرجاع للعميل غير الراضي — هذه العناصر الثلاثة تبني الثقة اللازمة لنمو أي منصة وسيطة بين طرفين لا يعرفان بعضهما.",
+"h": "في اقتصاد الوساطة، الثقة هي المنتج الفعلي المُباع، لا الخدمة الأصلية نفسها."
+},
+{
+"id": 26,
+"g": "المشاكل والحلول",
+"title": "إدارة المخزون في المتاجر الصغيرة",
+"scenario": "بضاعة تنتهي صلاحيتها أو تنفد فجأة بسبب الاعتماد على التتبع اليدوي أو الذاكرة.",
+"q": "اقترح حلاً سريع التطبيق خلال أسبوع بميزانية محدودة.",
+"model": "ملصقات QR بسيطة تُمسح عند كل عملية بيع وتُحدّث جدول مخزون رقمي (حتى عبر جوجل شيت مرتبط بنموذج)، مع تنبيه واتساب تلقائي عند اقتراب نفاد صنف معين. مؤشر النجاح: خفض نسبة الهالك 20% خلال أول شهر.",
+"h": "الحل الرخيص السريع الذي يوقف النزيف اليوم أهم من الحل «المثالي» المؤجل لعام قادم."
+},
+{
+"id": 27,
+"g": "المشاكل والحلول",
+"title": "حجوزات لا يحضر أصحابها (No-show)",
+"scenario": "نسبة كبيرة من حجوزات العيادات والصالونات (قد تصل 15-20%) لا يحضر أصحابها دون إلغاء مسبق.",
+"q": "اقترح حلاً عملياً لخفض هذه النسبة.",
+"model": "رسالة تذكير تلقائية عبر واتساب قبل 24 ساعة تطلب تأكيد الحضور بالضغط على زر، وربط الحجز بعربون بسيط (10-20 ريال) يُخصم من الفاتورة النهائية. مؤشر النجاح: خفض النسبة من 18% إلى أقل من 8% خلال شهرين.",
+"h": "أي التزام بلا ثمن — ولو رمزياً — يُنسى بسهولة؛ ربط الحجز بعربون صغير يحوّل النية إلى التزام فعلي."
+},
+{
+"id": 28,
+"g": "المشاكل والحلول",
+"title": "تشتت التواصل مع العملاء",
+"scenario": "صاحب المشروع يفقد رسائل عملاء ويتأخر في الرد بسبب تعدد القنوات (واتساب، انستغرام، اتصال).",
+"q": "اقترح حلاً لتوحيد وتسريع الاستجابة.",
+"model": "توحيد القنوات عبر أداة Inbox موحد بسيطة ورخيصة، أو تخصيص وقت ثابت يومياً للرد المجمّع بدل التنقل العشوائي. مؤشر النجاح: خفض متوسط زمن الرد من عدة ساعات إلى أقل من 30 دقيقة.",
+"h": "كل قناة تواصل جديدة تفتحها التزام تشغيلي دائم، لا مجرد باب إضافي؛ وحّد قبل أن تتوسع."
+},
+{
+"id": 29,
+"g": "المشاكل والحلول",
+"title": "صعوبة تحصيل التقييمات الإيجابية",
+"scenario": "العملاء غير الراضين يكتبون تقييمات سلبية بسهولة، بينما الراضون نادراً ما يكتبون تقييماً دون تذكير.",
+"q": "اقترح حلاً بسيطاً لزيادة عدد التقييمات الإيجابية.",
+"model": "إرسال رابط تقييم مباشر فور إتمام الخدمة بنجاح مع رسالة شكر قصيرة، وربطه بحافز بسيط كخصم على الزيارة القادمة. مؤشر النجاح: رفع عدد التقييمات الشهرية من 3-4 إلى 15 تقييماً على الأقل.",
+"h": "الرضا الصامت لا يُبني به سمعة؛ اطلب التقييم بنشاط بدل انتظار أن يتطوع به العميل."
+},
+{
+"id": 30,
+"g": "المشاكل والحلول",
+"title": "ضعف تكرار الشراء (Retention)",
+"scenario": "أغلب عملاء المتجر الإلكتروني يشترون مرة واحدة فقط ولا يعودون، مما يجبر المتجر على إنفاق مستمر لجذب عملاء جدد.",
+"q": "اقترح حلاً لرفع معدل تكرار الشراء.",
+"model": "برنامج ولاء بسيط (نقاط تُجمع مع كل شراء وتُستبدل بخصم)، ورسالة متابعة تلقائية بعد 30 يوماً من آخر شراء تعرض منتجاً مكمّلاً. مؤشر النجاح: رفع معدل التكرار خلال 90 يوماً من 12% إلى 25%.",
+"h": "اكتساب عميل جديد أغلى دائماً من الاحتفاظ بواحد قديم؛ استثمر في العميل الأول بعد بيعه لا قبله فقط."
+},
+{
+"id": 31,
+"g": "ركود المنتج",
+"title": "متجر ملابس يعاني ركوداً بعد نجاح أولي",
+"scenario": "حقق المتجر نمواً قوياً في أول 8 أشهر (90,000 ريال شهرياً) ثم تراجعت المبيعات تدريجياً إلى 35,000 ريال رغم عدم تغيّر التشكيلة أو الأسعار أو الموقع.",
+"q": "ما الأسباب المحتملة لهذا الركود، وكيف تُشخَّص المشكلة قبل اقتراح الحل؟",
+"model": "يجب التمييز بين ثلاثة أسباب مختلفة: تشبّع نفس شريحة العملاء (الحل: تنويع قنوات التسويق لا خفض الأسعار)، دخول منافس بتجربة أفضل (الحل: دراسة الفجوة التنافسية فعلياً)، أو تغيّر ذوق السوق دون تحديث التشكيلة (الحل: تجديد المنتج نفسه). الخطأ الشائع هو القفز مباشرة لعروض التخفيض دون تشخيص السبب الحقيقي أولاً.",
+"h": "لا تعالج عرضاً بسعر قبل أن تشخّص السبب؛ الخصم يخفي الأعراض ويترك المرض الحقيقي بلا علاج."
+},
+{
+"id": 32,
+"g": "ركود المنتج",
+"title": "تطبيق توصيل يفقد مستخدميه بعد أول تجربة",
+"scenario": "يجذب التطبيق 500 مستخدم جديد شهرياً عبر إعلانات مدفوعة، لكن 78% منهم لا يفتحون التطبيق مرة ثانية بعد أول طلب.",
+"q": "أين تكمن المشكلة الحقيقية، وهل الحل زيادة الإنفاق التسويقي؟",
+"model": "زيادة الإنفاق التسويقي هنا تُهدر المال لأنها تضخّم قاعدة مستخدمين لن تعود أصلاً؛ المشكلة في «الاحتفاظ» لا «الجذب». يجب تتبّع نقطة الانسحاب الدقيقة (بعد التسليم؟ عند فتح التطبيق ثانية؟) عبر استبيان قصير لعينة من المنسحبين قبل إنفاق أي مبلغ إضافي على جذب مستخدمين جدد سيتكرر معهم نفس المصير.",
+"h": "إغراق دلو مثقوب بمزيد من الماء لا يملأه؛ أصلح التسرب قبل أن تزيد الضخ."
+},
+{
+"id": 33,
+"g": "قلة الزبائن",
+"title": "عيادة علاج طبيعي جديدة بإقبال ضعيف",
+"scenario": "افتتحت العيادة قبل 3 أشهر بموقع جيد وتجهيزات حديثة، لكن متوسط المراجعين 4 مرضى يومياً فقط مقابل طاقة استيعابية 15 مريضاً.",
+"q": "ما الفرق بين ضعف التسويق وضعف الثقة كسببين لقلة الزبائن؟",
+"model": "الخدمات الصحية تعتمد على الثقة والتوصية الشخصية أكثر من الإعلانات المباشرة. الحل المتدرج: شراكات مع صالات رياضية وعيادات تقويم عظام قريبة للإحالة، جلسة تقييم أولى مجانية أو رمزية لكسر حاجز التجربة، وتحصيل تقييمات حقيقية من أول 10-15 مريضاً راضٍ. الإعلانات المدفوعة وحدها نادراً ما تكفي في قطاع يعتمد على الثقة الشخصية.",
+"h": "كل قطاع له عملة ثقته الخاصة؛ إعلان مدفوع لا يشتري ثقة يحتاجها العميل قبل أن يسلّمك جسده أو صحته."
+},
+{
+"id": 34,
+"g": "قلة الزبائن",
+"title": "مطعم مزدحم ظهراً وفارغ مساءً",
+"scenario": "المطعم مزدحم بالكامل وقت الغداء (12-3 ظهراً)، لكن الصالة شبه فارغة بعد الساعة 8 مساءً رغم بقاء نفس الفريق والتكاليف الثابتة.",
+"q": "هل الحل تخفيض الأسعار مساءً أم هناك حل أفضل؟",
+"model": "تخفيض الأسعار يُرسّخ في ذهن الجمهور أن «المساء وقت رخيص» ويضر بصورة المطعم لاحقاً. البديل الأذكى: تغيير عرض القيمة لا السعر، بتقديم قائمة مسائية مختلفة (مشاوي خاصة لا تُقدَّم ظهراً) تخلق سبباً جديداً للزيارة، مع تفعيل حجوزات العائلات والمناسبات الصغيرة مساءً وهي شريحة لا تتعارض مع ازدحام الغداء.",
+"h": "السعر أسهل أداة تُخفَّض وأخطرها على المدى الطويل؛ غيّر القيمة المعروضة قبل أن تغيّر الرقم."
+},
+{
+"id": 35,
+"g": "إهمال الإدارة",
+"title": "فرع بعيد عن رقابة المالك اليومية",
+"scenario": "يدير صاحب صالون رجالي فرعين، يتابع الأول يومياً لكنه يزور الثاني كل أسبوعين فقط. تراجعت إيرادات الفرع الثاني 30% خلال 4 أشهر دون سبب واضح.",
+"q": "كيف تُدار الفروع البعيدة دون حضور يومي للمالك؟",
+"model": "غياب المالك ليس المشكلة، بل غياب نظام رقابة بديل عن الحضور الشخصي. الحل: كاميرات مربوطة بالجوال لمراجعة الحركة اليومية، تقرير يومي إلزامي من مسؤول الفرع (عدد العملاء، الإيراد، نسبة الحجوزات الملغاة)، وتعيين مشرف مناوب بصلاحية اتخاذ قرارات تشغيلية يومية بدل ترك الفرع بلا مرجعية واضحة.",
+"h": "ما لا يُقاس لا يُدار؛ استبدل حضورك الشخصي بنظام تقارير ومؤشرات لا بالأمل الحسن."
+},
+{
+"id": 36,
+"g": "إهمال الإدارة",
+"title": "شركة تتراكم فيها الشكاوى دون رد",
+"scenario": "تصل رسائل شكاوى عبر البريد ووسائل التواصل، لكن لا يوجد شخص مخصص لمتابعتها فتُهمل، وبدأت تظهر تعليقات سلبية علنية.",
+"q": "ما الحل الإداري لمنع تكرار هذه المشكلة؟",
+"model": "تعيين «مالك واحد» لملف الشكاوى (ولو بدوام جزئي) مع التزام زمني واضح (الرد خلال 4 ساعات كحد أقصى)، وتصنيف الشكاوى حسب الخطورة (المالية والسلامة تُصعَّد فوراً). الأهم: تحويل كل شكوى إلى بند في تقرير أسبوعي للإدارة، لأن الشكاوى المتكررة على نفس النقطة تكشف مشكلة تشغيلية حقيقية تستحق حلاً جذرياً لا ردوداً فردية.",
+"h": "مسؤولية بلا اسم شخص واحد وراءها لا تُنفَّذ أبداً؛ لكل مشكلة متكررة يجب أن يكون هناك مالك واحد محدد."
+},
+{
+"id": 37,
+"g": "انعدام الشغف",
+"title": "فريق مبيعات فقد حماسه بعد أداء قوي",
+"scenario": "حقق فريق المبيعات (5 موظفين) نمواً ملحوظاً في أول نصف عام، ثم تراجع الأداء تدريجياً رغم بقاء نفس نظام العمولات ونفس المنتج.",
+"q": "هل الحل زيادة العمولة أم هناك سبب أعمق؟",
+"model": "تراجع الأداء بعد فترة قوية غالباً «إنهاك دافعي» لا نقص حافز مالي. زيادة العمولة تعطي دفعة مؤقتة فقط. الحل الأشمل: اجتماعات فردية لفهم السبب الفعلي من كل موظف، تنويع المهام (استهداف قطاع عملاء جديد) لكسر الرتابة، ونظام تقدير علني غير مالي بجانب الحافز المادي. المال يحل مشاكل الحافز قصيرة المدى، لكن الشغف يحتاج معنى وتقديراً ونمواً مستمراً.",
+"h": "المال يشتري جهداً إضافياً مؤقتاً، لكنه لا يشتري معنى؛ الفرق الفاترة تحتاج سبباً للاستمرار لا حافزاً أكبر فقط."
+},
+{
+"id": 38,
+"g": "انعدام الشغف",
+"title": "مصنع يعاني ارتفاع دوران الموظفين",
+"scenario": "يترك المصنع نحو 40% من العمال سنوياً، مما يجبر الإدارة على تدريب موظفين جدد باستمرار ويؤثر على جودة الإنتاج المتذبذبة.",
+"q": "كيف تُشخَّص أسباب ترك الموظفين قبل رفع الرواتب فقط؟",
+"model": "ارتفاع الدوران له كلفة خفية أكبر من كلفة الراتب (تدريب، أخطاء، تراجع جودة أثناء التعلم). قبل رفع الرواتب، يجب إجراء مقابلات خروج منظمة مع كل من يترك العمل لمعرفة السبب الحقيقي: الراتب؟ بيئة العمل؟ غياب فرص الترقي؟ سوء معاملة المشرف المباشر؟ غالباً يكون السبب الأول معاملة المشرف لا الراتب، وهذا يُحل بتدريب المشرفين لا برفع الأجور وحده.",
+"h": "الموظفون لا يتركون الشركات غالباً، بل يتركون مشرفيهم المباشرين؛ ابحث في العلاقة قبل الراتب."
+},
+{
+"id": 39,
+"g": "ضيق المكان",
+"title": "مخبز منزلي يفيض عن طاقة المطبخ",
+"scenario": "نجح المخبز ببيع 200 قطعة أسبوعياً من مطبخ منزلي، لكن الطلبات ارتفعت إلى 800 قطعة أسبوعياً وأصبح المطبخ عاجزاً عن الاستيعاب، فتأخرت الطلبات وتراجعت الجودة.",
+"q": "هل الحل الانتقال فوراً لمطبخ تجاري كبير أم هناك خيار وسيط؟",
+"model": "الانتقال المباشر لمطبخ كبير يحمل مخاطرة مالية عالية قبل التأكد من استقرار الطلب الجديد. الخيار الأذكى: استئجار «مطبخ سحابي مشترك» بالساعة أو باليوم، يتيح إنتاجاً أكبر دون التزام إيجار طويل الأجل، ويمنح فترة اختبار لمعرفة استقرار الطلب قبل الاستثمار الكبير في مطبخ مستقل.",
+"h": "النمو المفاجئ فخ بقدر ما هو فرصة؛ اختبر استقرار الطلب قبل التزام مالي طويل الأمد يصعب التراجع عنه."
+},
+{
+"id": 40,
+"g": "ضيق المكان",
+"title": "عيادة أسنان تريد خدمة جديدة بمساحة محدودة",
+"scenario": "تحتاج العيادة غرفة إضافية لخدمة تقويم جديدة، لكن المساحة الحالية (غرفتان فقط) ممتلئة بجدول المواعيد الحالي.",
+"q": "كيف تضيف العيادة خدمة جديدة دون توسعة فورية مكلفة؟",
+"model": "قبل التفكير بالتوسعة، يجب فحص كفاءة استخدام المساحة الحالية — هل الغرفتان مشغولتان فعلياً طوال الدوام أم توجد فجوات زمنية غير مستغلة؟ حل مؤقت فعّال: تخصيص أيام أو ساعات محددة أسبوعياً لخدمة التقويم في أوقات أقل ازدحاماً مع جدولة إلكترونية دقيقة، لاختبار جدوى الخدمة الجديدة بميزانية شبه معدومة قبل استئجار مساحة إضافية.",
+"h": "قبل أن تشتري مساحة جديدة، تأكد أنك استنفدت فعلاً كفاءة المساحة التي تملكها."
+},
+{
+"id": 41,
+"g": "نقص الكوادر",
+"title": "مطعم توصيل ينمو أسرع من فريقه",
+"scenario": "ارتفعت الطلبات من 50 إلى 200 طلب يومياً خلال شهرين، لكن فريق المطبخ بقي 3 طهاة فقط، مما تسبب في تأخر التوصيل وشكاوى متكررة.",
+"q": "هل الحل التوظيف الفوري لعدد كبير من الطهاة الجدد؟",
+"model": "التوظيف السريع لعدد كبير دفعة واحدة يحمل مخاطر تدريب متسرع وتكلفة رواتب ثابتة قبل تأكد استقرار النمو. الحل المتدرج: تبسيط قائمة الطعام مؤقتاً للتركيز على الأصناف الأكثر طلباً، توظيف عامل أو اثنين بعقود مؤقتة أو دوام جزئي وقت الذروة فقط، ومراجعة سير العمل الداخلي للتأكد أن التأخير سببه فعلاً نقص الأيدي لا سوء تنظيم المطبخ.",
+"h": "قبل توظيف المزيد من الأيدي، تأكد أن المشكلة نقص أيدٍ فعلاً لا سوء تنظيم يبتلع أي عدد إضافي."
+},
+{
+"id": 42,
+"g": "نقص الكوادر",
+"title": "متجر تجزئة ونقص الكوادر الموسمي",
+"scenario": "يحتاج المتجر ضعف عدد الموظفين خلال 6 أسابيع من موسم الذروة السنوي فقط (رمضان أو موسم المدارس)، بينما التوظيف الدائم لهذا العدد غير مجدٍ بقية العام.",
+"q": "كيف يُدار نقص الكوادر الموسمي دون تكلفة توظيف دائم غير ضرورية؟",
+"model": "التوظيف الموسمي المؤقت (عقود محددة المدة تغطي فترة الذروة فقط) هو الحل القياسي، مع الاستعانة بطلاب أو عمالة جزئية متاحة في تلك الفترة. الأذكى: بناء «قائمة احتياط» من موظفين موسميين أثبتوا كفاءتهم في مواسم سابقة والتواصل معهم مباشرة قبل كل موسم، لتقليل وقت وتكلفة التوظيف والتدريب المتكرر من الصفر.",
+"h": "لا تبنِ هيكلاً تشغيلياً دائماً لحاجة موسمية؛ صمّم مرونة توظيف تتنفس مع الطلب."
+},
+{
+"id": 43,
+"g": "ارتفاع الأسعار",
+"title": "مطعم يواجه ارتفاع مفاجئ في تكلفة المواد الخام",
+"scenario": "ارتفع سعر الدجاج واللحوم 25% خلال 3 أشهر، بينما أسعار القائمة لم تتغير، فتقلّص هامش الربح من 22% إلى 9% فقط.",
+"q": "هل رفع الأسعار بنفس نسبة 25% هو الحل الصحيح؟",
+"model": "رفع السعر بنفس نسبة ارتفاع التكلفة دفعة واحدة قد يصدم العملاء ويقلل الطلب بشكل حاد. الحل متعدد المسارات: رفع تدريجي وجزئي (5-8%) يمتصه العميل دون صدمة، إعادة هندسة القائمة (تقليل حجم الحصة قليلاً أو استبدال مكوّن مكلف في الأطباق الأقل حساسية للجودة)، والتفاوض مع الموردين على عقود بسعر ثابت لمدة 6-12 شهراً لحماية الهامش من التقلبات المستقبلية.",
+"h": "لا تُحمّل العميل صدمة تكلفتك دفعة واحدة؛ وزّع الأثر عبر أدوات متعددة لا أداة السعر وحدها."
+},
+{
+"id": 44,
+"g": "ارتفاع الأسعار",
+"title": "شركة تقنية ناشئة أمام ارتفاع رواتب السوق",
+"scenario": "ارتفعت رواتب مطوّري البرمجيات في السوق 30% خلال عام بسبب المنافسة على الكفاءات، مما يهدد الشركة الناشئة بفقدان موظفيها الأساسيين لصالح شركات أكبر.",
+"q": "كيف تحافظ الشركة الناشئة على كوادرها دون منافسة الرواتب الكبرى مباشرة؟",
+"model": "نادراً ما تستطيع الشركات الناشئة منافسة رواتب الشركات الكبرى مباشرة، فتنافس بعناصر أخرى: حصص ملكية أو خيارات أسهم تربط مصلحة الموظف بنمو الشركة، مرونة عمل أعلى لا تقدمها الشركات الكبرى بسهولة، ومسار نمو مهني أسرع ومسؤوليات أوسع مبكراً. الحل الأمثل عملياً مزيج من زيادة راتب جزئية معقولة + حزمة مزايا غير نقدية مصممة لما يقدّره الموظف فعلاً.",
+"h": "من لا يستطيع منافسة الكبار بالمال ينافسهم بما لا يستطيعون تقديمه بسهولة: المرونة والمعنى والملكية."
+},
+{
+"id": 45,
+"g": "التسعير والهوامش",
+"title": "متجر يسعّر منتجاته بالتقليد لا بالحساب",
+"scenario": "صاحب متجر أدوات منزلية يسعّر منتجاته بنفس سعر أقرب منافسَين له فقط، دون حساب تكلفته الفعلية. اكتشف بعد 6 أشهر أن هامشه الحقيقي على ثلث المنتجات كان سالباً بعد احتساب الشحن والتغليف والإرجاعات.",
+"q": "ما الخطأ في اعتماد سعر المنافس كمرجع وحيد للتسعير؟",
+"model": "سعر المنافس مرجع تنافسي لا مرجع تكلفة؛ يجب أولاً بناء «تسعير من القاعدة» (Cost-plus) يشمل تكلفة الشراء، الشحن، التغليف، نسبة الإرجاع المتوقعة، وعمولة الدفع، ثم مقارنة الناتج بسعر السوق. أي منتج يقل سعره التنافسي عن كلفته الحقيقية يُستبعد أو يُعاد تفاوض تكلفته مع المورد، لا أن يُباع بخسارة صامتة.",
+"h": "سعر السوق يخبرك بما يمكن أن تبيع به، لا بما يجب أن تبيع به؛ احسب تكلفتك أولاً دائماً."
+},
+{
+"id": 46,
+"g": "التسعير والهوامش",
+"title": "مصمم جرافيك يحدد أجره بالساعة فقط",
+"scenario": "مستقل يتقاضى 80 ريالاً للساعة، لكنه أصبح أسرع بمرور الخبرة فينجز نفس العمل الذي كان يستغرق 10 ساعات في 4 ساعات فقط — أي أن دخله انخفض كلما تحسّن في عمله.",
+"q": "ما الخلل في نموذج «الأجر بالساعة» هنا، وما البديل؟",
+"model": "التسعير بالساعة يعاقب الكفاءة: كلما أتقن العمل، قلّت ساعاته، وقلّ دخله رغم تحسّن جودته وسرعته. البديل هو التسعير بالمشروع أو بالقيمة المُنتجة للعميل (Value-based pricing)، بحيث يُحدَّد السعر بناءً على أثر التصميم على عمل العميل (زيادة تحويل، هوية علامة) لا على عدد الساعات المصروفة.",
+"h": "من يبيع وقته يُعاقَب على تطوره؛ من يبيع نتيجته يُكافأ عليه."
+},
+{
+"id": 47,
+"g": "التسعير والهوامش",
+"title": "مزود خدمات B2B يمنح خصومات فردية عشوائية",
+"scenario": "مندوب مبيعات يمنح كل عميل خصماً مختلفاً حسب مزاجه وقدرته على الإقناع، فبعض العملاء يدفعون 30% أقل من غيرهم مقابل نفس الخدمة تماماً دون معيار واضح.",
+"q": "ما مخاطر هذا النمط، وكيف تُبنى سياسة تسعير أكثر انضباطاً؟",
+"model": "الخصومات العشوائية تُفقد الشركة قدرتها على التنبؤ بالإيراد، وتخلق شعوراً بالظلم إذا اكتشف العملاء فروق الأسعار فيما بينهم، وتمنح المندوبين سلطة تسعير لا يجب أن تكون بيدهم. الحل: شرائح خصم رسمية مرتبطة بمعايير موضوعية (حجم الطلب، مدة التعاقد، الدفع المقدم) وسقف أقصى للخصم لا يتجاوزه أي مندوب دون موافقة إدارية.",
+"h": "التسعير العشوائي ليس مرونة، بل فوضى تُكلفك مصداقيتك أمام عملائك أنفسهم."
+},
+{
+"id": 48,
+"g": "التسعير والهوامش",
+"title": "متجر يخلط بين هامش المنتج وهامش الشركة",
+"scenario": "صاحب متجر إلكتروني يفخر بهامش ربح 40% على كل منتج، لكن حساباته لا تشمل تكلفة الإعلانات والمرتجعات وخدمة العملاء، فالربح الفعلي للشركة بعد كل هذه البنود لا يتجاوز 3%.",
+"q": "ما الفرق بين هامش المنتج (Gross Margin) وربحية الشركة الفعلية، ولماذا يهم هذا التمييز؟",
+"model": "هامش المنتج يقيس الفرق بين سعر البيع وتكلفة الشراء فقط، بينما ربحية الشركة تخصم أيضاً تكاليف التسويق والتشغيل والمرتجعات وخدمة العملاء والإدارة. الخطأ الشائع هو اتخاذ قرارات توسع بناءً على هامش المنتج المرتفع بينما الشركة تخسر فعلياً على مستوى التكلفة الكاملة للعميل (CAC مقابل قيمته).",
+"h": "هامش مرتفع على الورق لا يعني شركة رابحة؛ اجمع كل التكاليف قبل أن تحتفل بالرقم."
+},
+{
+"id": 49,
+"g": "التسعير والهوامش",
+"title": "مطعم يقدّم عروضاً «اشترِ واحدة واحصل على الثانية مجاناً» بلا حساب",
+"scenario": "يطلق المطعم عروض بوغو (Buy One Get One) باستمرار لجذب الزبائن، لكن حساب الهامش بعد العرض يكشف أن كل عملية بيع بهذا العرض تُحقق خسارة صافية 4 ريالات.",
+"q": "متى يكون عرض البوغو مربحاً ومتى يكون فخاً؟",
+"model": "عرض البوغو يصلح فقط عندما تسمح تكلفة المنتج الحدية المنخفضة (مثل مشروب بتكلفة 2 ريال يُباع بـ15) بامتصاص التخفيض، أو حين يهدف العرض لزيادة متوسط الفاتورة عبر منتجات مصاحبة بهامش مرتفع. أما تطبيقه على منتج بهامش ضيق أصلاً (كوجبة رئيسية بتكلفة مرتفعة) فيحوّل كل عملية بيع إلى خسارة مقنّعة بواجهة تسويقية جذابة.",
+"h": "العرض الترويجي الجذاب ليس بالضرورة عرضاً رابحاً؛ احسب الهامش بعد الخصم قبل إطلاق أي حملة، لا بعدها."
+},
+{
+"id": 50,
+"g": "الضرائب والزكاة",
+"title": "متجر يتجاهل ضريبة القيمة المضافة في التسعير",
+"scenario": "تاجر جديد يسعّر منتجاته دون احتساب ضريبة القيمة المضافة 15% بوضوح، فيضطر لاحقاً إما لتحمّلها من هامشه أو رفع الأسعار المفاجئ الذي يصدم العملاء الحاليين.",
+"q": "كيف يجب التعامل مع ضريبة القيمة المضافة من اليوم الأول لا كتصحيح لاحق؟",
+"model": "يجب أن تُبنى كل استراتيجية تسعير من البداية على أساس «السعر شامل الضريبة»، بحيث تُحسب الضريبة كجزء من هيكل التكلفة النهائي المعروض للعميل لا كإضافة مفاجئة، مع الاحتفاظ بسجلات فوترة إلكترونية متوافقة (الفوترة الإلكترونية إلزامية) لتفادي غرامات عدم الامتثال التي قد تفوق أي مبلغ ضريبي موفَّر بمحاولة التحايل.",
+"h": "الضريبة ليست بنداً يُضاف لاحقاً، بل جزء أصيل من هيكل التسعير من أول يوم."
+},
+{
+"id": 51,
+"g": "الضرائب والزكاة",
+"title": "شركة صغيرة تخلط بين الزكاة والضريبة",
+"scenario": "مؤسس شركة سعودية 100% يظن أن عليه ضريبة دخل مثل الشركات الأجنبية، بينما شركته يجب أن تُقدّم إقراراً زكوياً وفق وعاء الزكاة لا ضريبة الدخل، وقد أهمل التقديم لعامين ظناً منه أن الأمر لا ينطبق عليه.",
+"q": "لماذا يُعد الخلط بين الالتزامات الزكوية والضريبية خطيراً على الشركات الناشئة؟",
+"model": "يختلف الالتزام باختلاف ملكية الشركة (سعودية، خليجية، أجنبية، أو مختلطة)، وتجاهل التقديم في الوقت المحدد — حتى مع عدم وجود مستحقات فعلية أحياناً — يترتب عليه غرامات تأخير تراكمية. الحل: التسجيل لدى هيئة الزكاة والضريبة والجمارك فور تأسيس الشركة، ومعرفة الوعاء الصحيح المطبَّق عليها تحديداً، بدل الاعتماد على افتراضات عامة سمعها المؤسس من غيره.",
+"h": "الجهل بالالتزام الضريبي أو الزكوي لا يُعفيك منه؛ فقط يؤخر اكتشاف الغرامة."
+},
+{
+"id": 52,
+"g": "الضرائب والزكاة",
+"title": "مستقل لا يفصل بين حسابه الشخصي وحساب عمله",
+"scenario": "مصمم مستقل يستقبل كل مدفوعات عملائه في حسابه البنكي الشخصي نفسه الذي يستخدمه لمصروفاته اليومية، فيصعب عليه لاحقاً تحديد دخله الفعلي القابل للتصريح أو حساب مصروفاته القابلة للخصم.",
+"q": "لماذا يُعد فصل الحسابات المالية أساساً لا رفاهية إدارية؟",
+"model": "خلط الحسابات يجعل من المستحيل عملياً تتبع الربحية الحقيقية أو إثبات المصروفات عند الحاجة لتقديم إقرار أو التقدم لتمويل، ويعرّض صاحب العمل لتقدير جزافي من الجهات الضريبية في حال المراجعة. فصل حساب بنكي مخصص للعمل — ولو بسيطاً — هو أول خطوة احترافية حقيقية قبل أي نمو.",
+"h": "لا يمكن أن تدير ما لا تستطيع قياسه؛ ولا يمكن أن تقيسه إن كان مخلوطاً بحياتك الشخصية."
+},
+{
+"id": 53,
+"g": "الضرائب والزكاة",
+"title": "مستورد يتجاهل الرسوم الجمركية عند التسعير المبدئي",
+"scenario": "تاجر استورد دفعة أثاث من الصين بسعر جذاب على الورق، لكنه فوجئ برسوم جمركية وتخليص ومناولة ميناء رفعت التكلفة الفعلية 22% فوق سعر الفاتورة الأصلي.",
+"q": "كيف يُحسب سعر التكلفة الحقيقي (Landed Cost) للبضاعة المستوردة؟",
+"model": "سعر الفاتورة من المورد هو نقطة البداية فقط؛ التكلفة الحقيقية (Landed Cost) تشمل الشحن الدولي، التأمين، الرسوم الجمركية حسب التصنيف الجمركي للسلعة، رسوم التخليص والمناولة في الميناء، والنقل الداخلي حتى المستودع. أي قرار تسعير أو جدوى مبني على سعر الفاتورة وحده مضلِّل وقد يقلب مشروعاً رابحاً على الورق إلى خاسر فعلياً.",
+"h": "السعر المعروض من المورد هو نقطة البداية لا التكلفة النهائية؛ احسب الرحلة كاملة قبل التسعير."
+},
+{
+"id": 54,
+"g": "الضرائب والزكاة",
+"title": "منشأة تتأخر في التسجيل الإلزامي للضريبة",
+"scenario": "بلغت إيرادات متجر إلكتروني 400,000 ريال خلال 12 شهراً متجاوزاً حد التسجيل الإلزامي في ضريبة القيمة المضافة، لكن صاحبه استمر في العمل دون تسجيل لثلاثة أشهر إضافية ظناً منه أن الأمر «سيُسوَّى لاحقاً».",
+"q": "ما تكلفة التأخر في الامتثال الضريبي بعد تجاوز الحد الإلزامي؟",
+"model": "بمجرد تجاوز حد التسجيل الإلزامي، يصبح التسجيل التزاماً فورياً لا اختيارياً، والتأخر يعرّض المنشأة لغرامات تُحسب عن كامل الفترة المتأخرة وليس فقط من تاريخ اكتشافها، وقد تشمل مضاعفة الضريبة غير المُحصَّلة من العملاء بأثر رجعي من جيب صاحب المشروع نفسه لأنه لم يحصّلها في وقتها. المتابعة الدورية لعتبات الإيراد الإلزامية جزء من الإدارة المالية الأساسية لا التفصيل الثانوي.",
+"h": "تجاوز عتبة الالتزام القانوني ليس إنجازاً يُحتفى به فقط، بل نقطة تتطلب إجراءً فورياً."
+},
+{
+"id": 55,
+"g": "العقود والشروط",
+"title": "مشروع ينفّذ عملاً كبيراً باتفاق شفهي فقط",
+"scenario": "مصمم داخلي بدأ تنفيذ مشروع فيلا بقيمة 180,000 ريال بناءً على اتفاق شفهي وواتساب مع صاحب المنزل، دون عقد موقّع يحدد نطاق العمل والدفعات، فرفض العميل دفع الدفعة الأخيرة مدّعياً تعديلات لم تُذكر أصلاً.",
+"q": "لماذا يُعد العقد المكتوب ضرورة حتى مع العملاء «الموثوقين»؟",
+"model": "الثقة الشخصية لا تحمي من خلاف تفسير النطاق أو الجدول الزمني عند حدوث أي احتكاك، والعقد المكتوب ليس علامة على انعدام الثقة بل توثيق لفهم مشترك يحمي الطرفين. يجب أن يحدد العقد نطاق العمل بدقة، جدول الدفعات المرتبط بمراحل واضحة، آلية التعامل مع طلبات التعديل الإضافية (وتكلفتها)، وشرط فسخ واضح — كل ذلك قبل بدء أي عمل فعلي مهما بدت العلاقة ودية.",
+"h": "العقد لا يُكتب لأنك لا تثق بعميلك، بل لأن الذاكرة والنوايا الحسنة لا تكفي عند أول خلاف."
+},
+{
+"id": 56,
+"g": "العقود والشروط",
+"title": "متجر إلكتروني بلا سياسة إرجاع واضحة",
+"scenario": "متجر ملابس لا يملك سياسة إرجاع مكتوبة على الموقع، فيتعامل مع كل طلب إرجاع بشكل مختلف حسب مزاج الموظف المناوب، مما يخلق تجربة غير متسقة وشكاوى متكررة على وسائل التواصل.",
+"q": "لماذا تُعد سياسة الإرجاع المكتوبة أداة حماية للتاجر لا للعميل فقط؟",
+"model": "غياب سياسة واضحة يحوّل كل حالة إرجاع إلى تفاوض فردي مرهق، ويفتح الباب لتناقضات تُستغل من بعض العملاء وتُغضب عملاء آخرين لم يُعاملوا بنفس المرونة. سياسة إرجاع مكتوبة وواضحة (المدة، الشروط، من يتحمل تكلفة الشحن) تحمي هامش الربح من الاستغلال، وتمنح فريق خدمة العملاء مرجعية موحدة تُسرّع القرار وتقلل الاحتكاك.",
+"h": "غياب القاعدة المكتوبة لا يعني مرونة أكبر، بل فوضى تُستغل من العملاء وتُرهق الفريق."
+},
+{
+"id": 57,
+"g": "العقود والشروط",
+"title": "مشروع بشراكة بلا عقد تأسيسي مكتوب",
+"scenario": "صديقان أسسا شركة تقنية بحصة 50-50 على أساس الصداقة دون عقد تأسيسي يحدد الأدوار وآلية الخروج، وبعد عامين اختلفا على قرار استراتيجي وتوقف المشروع بالكامل بلا آلية لحل الخلاف أو شراء حصة أحدهما.",
+"q": "ما البنود الأساسية التي يجب أن يحتويها عقد التأسيس بين الشركاء منذ اليوم الأول؟",
+"model": "يجب أن يحدد العقد التأسيسي: توزيع الحصص وأسسه، أدوار ومسؤوليات كل شريك بوضوح، آلية اتخاذ القرار عند الخلاف (تصويت، محكّم ثالث)، شرط «الاستحقاق التدريجي» (Vesting) للحصص المرتبط بالبقاء الفعلي في المشروع، وآلية واضحة لتقييم وشراء حصة أي شريك يريد الخروج. غياب هذه البنود يحوّل أي خلاف طبيعي إلى أزمة وجودية للمشروع بالكامل.",
+"h": "الصداقة تبني المشروع، لكن العقد وحده يحميه عندما تختلف الصداقة نفسها."
+},
+{
+"id": 58,
+"g": "العقود والشروط",
+"title": "عقد مع مؤثر تسويقي بلا بنود حماية",
+"scenario": "علامة تجارية دفعت 15,000 ريال لمؤثرة لنشر محتوى ترويجي، لكنها لم تحدد في الاتفاق موعد النشر ولا مدة بقاء المحتوى، فحذفته المؤثرة بعد يومين فقط دون أي التزام تعاقدي يمنعها.",
+"q": "ما البنود الضرورية في عقود التسويق عبر المؤثرين لحماية قيمة الإنفاق؟",
+"model": "يجب أن يحدد أي اتفاق تسويقي: موعد النشر الدقيق، مدة بقاء المحتوى على المنصة كحد أدنى، الموافقة المسبقة على المحتوى قبل النشر، الحق في إعادة استخدام المحتوى في إعلانات العلامة لاحقاً، وشرط جزائي عند الإخلال بأي بند. التعامل مع التسويق بالمؤثرين كصفقة غير رسمية يعرّض ميزانية التسويق بالكامل لمزاج طرف ثالث لا يلتزم بشيء محدد.",
+"h": "أي إنفاق تسويقي بلا التزام تعاقدي واضح هو مبلغ تدفعه على أمل حسن النية فقط."
+},
+{
+"id": 59,
+"g": "العقود والشروط",
+"title": "شركة توظف بلا عقود عمل موثّقة نظامياً",
+"scenario": "مصنع صغير يوظف عماله باتفاق شفهي على الراتب فقط، دون عقود موثقة في منصة العمل المعتمدة، فواجه لاحقاً نزاعاً عمالياً أمام الجهات المختصة دون أي إثبات رسمي لشروط التوظيف المتفق عليها.",
+"q": "ما المخاطر القانونية والمالية لغياب عقود العمل الموثّقة؟",
+"model": "غياب التوثيق النظامي يجعل صاحب العمل في موقف ضعيف عند أي نزاع، إذ تُرجَّح كفة العامل غالباً عند غياب إثبات مكتوب، فضلاً عن التعرض لغرامات مخالفة أنظمة العمل بحد ذاتها بغض النظر عن نتيجة النزاع. توثيق كل عقد عمل فور التوظيف — بما يشمل الراتب، ساعات العمل، ونهاية الخدمة — التزام قانوني أساسي وحماية مالية حقيقية للمنشأة لا مجرد إجراء روتيني.",
+"h": "غياب الورقة الرسمية لا يجعل الالتزام أخف، بل يجعل إثباته أصعب عليك أنت تحديداً عند النزاع."
+},
+{
+"id": 60,
+"g": "الشراكة بين المؤسسين",
+"title": "شريكان بحصص متساوية وأدوار غير محددة",
+"scenario": "شريكان في متجر إلكتروني يملكان 50% لكل منهما، ويتخذان كل قرار — من اختيار المورد إلى تصميم اللوغو — بالتوافق الكامل، مما يُبطئ كل قرار تشغيلي بسيط لأيام من النقاش.",
+"q": "ما مشكلة الحصص المتساوية بلا تحديد نطاق قرار لكل شريك؟",
+"model": "التساوي في الملكية لا يعني بالضرورة التساوي في مجال القرار؛ الحل العملي هو تقسيم نطاقات القرار بوضوح (مثلاً: شريك مسؤول عن التشغيل والمخزون، وآخر عن التسويق والمبيعات) بحيث يتخذ كل شريك قراراته اليومية في نطاقه دون حاجة لموافقة الآخر، على أن تبقى القرارات الاستراتيجية الكبرى (تمويل، توسع، بيع حصة) خاضعة للتوافق المشترك فقط.",
+"h": "التساوي في الملكية لا يجب أن يعني التساوي في كل قرار يومي؛ حدد من يقرر ماذا قبل أن يبطئ كل شيء."
+},
+{
+"id": 61,
+"g": "الشراكة بين المؤسسين",
+"title": "شريك يعمل بدوام جزئي بينما الآخر متفرغ بالكامل",
+"scenario": "أحد الشريكين ترك وظيفته وتفرّغ كلياً للمشروع، بينما الآخر يساهم بضع ساعات أسبوعياً فقط لأنه ما زال في وظيفته، لكن الحصص ظلت 50-50 كما اتُّفق عليها في البداية.",
+"q": "هل من العدل استمرار الحصص المتساوية في هذا الوضع؟",
+"model": "استمرار حصص متساوية رغم تفاوت كبير في المساهمة الفعلية يخلق استياءً متراكماً لدى الشريك المتفرغ ويهدد استمرار الشراكة على المدى المتوسط. الحل العادل: إعادة تفاوض الحصص لتعكس المساهمة الفعلية (وقت، جهد، رأس مال)، أو تحويل مساهمة الشريك غير المتفرغ إلى تعويض مختلف (نسبة أقل من الملكية + أجر استشاري رمزي) بدل الإصرار على تساوٍ لم يعد يعكس الواقع.",
+"h": "عدالة الحصص تُقاس بالمساهمة الفعلية المستمرة، لا بالاتفاق الأولي الذي تغيّرت ظروفه."
+},
+{
+"id": 62,
+"g": "الشراكة بين المؤسسين",
+"title": "شريك مؤسس يريد الخروج بعد عامين",
+"scenario": "أحد ثلاثة شركاء مؤسسين يرغب بالخروج من الشركة بعد عامين لظروف شخصية، لكن لا يوجد أي آلية متفق عليها لتقييم حصته أو طريقة شرائها من بقية الشركاء.",
+"q": "لماذا يجب الاتفاق على آلية الخروج قبل حدوثه لا بعده؟",
+"model": "التفاوض على قيمة الحصة وآلية الشراء بعد رغبة الخروج الفعلية يضع الطرفين في موقف عاطفي متوتر يصعب فيه الاتفاق على رقم عادل. الحل الوقائي: تحديد آلية تقييم مسبقة في عقد التأسيس (مثل مضاعف على الإيرادات أو تقييم مستقل معتمد)، وفترة سماح زمنية للشركاء الباقين لشراء الحصة بالتقسيط إن لزم، بدل ترك القرار لضغط اللحظة.",
+"h": "اتفق على شروط الانفصال في يوم الزواج بالمشروع، لا في يوم الخلاف الفعلي."
+},
+{
+"id": 63,
+"g": "الشراكة بين المؤسسين",
+"title": "شريك صامت يموّل فقط دون أي دور تشغيلي",
+"scenario": "شريك ثالث ضخ 200,000 ريال في مشروع مطعم دون أي دور تشغيلي، لكنه بدأ بعد ستة أشهر بالتدخل اليومي في قرارات المطبخ والموظفين رغم أن دوره المتفق عليه تمويلي بحت.",
+"q": "كيف يُدار الخلاف حول نطاق تدخل الشريك المموّل الصامت؟",
+"model": "غياب توثيق واضح لطبيعة دور «الشريك الصامت» (Silent Partner) من البداية يفتح الباب لتفسيرات متضاربة لاحقاً حول حدود تدخله. الحل: توثيق رسمي منذ البداية يحدد أن دوره تمويلي فقط مع حقه في تقارير دورية ومراجعة القرارات الكبرى، دون صلاحية التدخل التشغيلي اليومي، مع قناة تواصل رسمية شهرية تُشبع حاجته للاطمئنان دون أن تُعطّل الفريق التشغيلي.",
+"h": "المال يشتري حصة في الملكية، لا بالضرورة مقعداً في كل قرار يومي — وضّح هذا قبل أن يفترضه أحد الطرفين."
+},
+{
+"id": 64,
+"g": "التسويق الرقمي ووهم الأرقام",
+"title": "حساب بـ100 ألف متابع ومبيعات شبه معدومة",
+"scenario": "صاحب علامة أزياء يملك 100,000 متابع على انستغرام حصل عليها عبر مسابقات «تابعنا واربح»، لكن مبيعاته الشهرية لا تتجاوز 8,000 ريال ومعدل التفاعل الفعلي أقل من 0.3%.",
+"q": "لماذا لا يترجم عدد المتابعين الكبير إلى مبيعات هنا؟",
+"model": "متابعو المسابقات جمهور جذبه العرض المجاني (الجائزة) لا اهتمامه الحقيقي بالمنتج، فهم جمهور «بارد» لا يتحول لعملاء. المؤشر الحقيقي للقيمة التسويقية هو معدل التفاعل ونسبة التحويل لا العدد الخام؛ يجب إعادة بناء الجمهور عبر محتوى يستهدف نية شراء حقيقية (مراجعات، محتوى تعليمي عن المنتج) بدل مسابقات تضخّم الرقم فقط.",
+"h": "عدد المتابعين رقم غرور ما لم يقترن بمعدل تفاعل وتحويل حقيقي؛ اقس جمهورك بجودته لا بحجمه."
+},
+{
+"id": 65,
+"g": "التسويق الرقمي ووهم الأرقام",
+"title": "حملة إعلانية بتكلفة نقرة منخفضة لكن بلا مبيعات",
+"scenario": "حملة إعلانية حققت تكلفة نقرة منخفضة جداً (0.3 ريال) وعدد زيارات كبير للموقع، لكن معدل التحويل الفعلي لمبيعات كان أقل من 0.2%، أي أن كل عملية بيع كلّفت أضعاف هامش الربح.",
+"q": "لماذا لا تكفي تكلفة النقرة المنخفضة كمؤشر نجاح للحملة؟",
+"model": "تكلفة النقرة الرخيصة قد تعني استهدافاً غير دقيق يجذب زواراً فضوليين لا مشترين فعليين؛ المؤشر الحاسم هو تكلفة اكتساب العميل الفعلي (CAC) مقارنة بقيمته على مدى علاقته بالمتجر (LTV)، لا تكلفة النقرة وحدها. حملة رخيصة بلا تحويل أسوأ من حملة أغلى بتحويل مرتفع؛ يجب دائماً قياس السلسلة الكاملة من الزيارة حتى الدفع الفعلي.",
+"h": "رخص الوصول للعميل المحتمل لا يعني رخص الحصول على عميل فعلي؛ تابع القمع كاملاً لا نقطة الدخول فقط."
+},
+{
+"id": 66,
+"g": "التسويق الرقمي ووهم الأرقام",
+"title": "متجر يعتمد كلياً على إعلان واحد ناجح",
+"scenario": "حقق متجر إلكتروني نجاحاً كبيراً باعتماده على إعلان فيديو واحد حقق انتشاراً واسعاً، لكن أداء الإعلان تراجع فجأة بعد شهرين ولم يكن هناك بديل جاهز، فانهارت المبيعات 70% خلال أسبوعين.",
+"q": "ما مخاطر الاعتماد على قناة تسويقية أو إعلان واحد ناجح؟",
+"model": "أي نجاح تسويقي مرتبط بمصدر واحد هش بطبيعته لأن أداء المنصات والإعلانات يتغير بلا إنذار مسبق (تعب الجمهور من الإعلان، تغيّر خوارزمية، دخول منافس). يجب دائماً اختبار وتطوير عدة إعلانات وقنوات بالتوازي حتى في ذروة نجاح إعلان واحد، بحيث لا يعتمد أكثر من 40-50% من الإيراد على مصدر تسويقي واحد مهما بدا مربحاً حالياً.",
+"h": "النجاح المعتمد على مصدر واحد ليس استقراراً بل مخاطرة مؤجلة؛ نوّع قنواتك في أوج نجاحك لا بعد انهياره."
+},
+{
+"id": 67,
+"g": "التسويق الرقمي ووهم الأرقام",
+"title": "علامة تجارية تتجاهل قيمة العميل الممتد (LTV)",
+"scenario": "متجر مستحضرات تجميل ينفق 60 ريالاً لاكتساب كل عميل جديد، ويحقق 50 ريالاً فقط من أول عملية شراء، فيبدو الإعلان خاسراً في الظاهر بينما العميل نفسه يعود للشراء 4 مرات سنوياً بمتوسط 90 ريالاً في كل مرة.",
+"q": "لماذا قد يكون هذا الإنفاق التسويقي مربحاً رغم خسارته الظاهرية في أول عملية بيع؟",
+"model": "النظر لربحية أول عملية بيع فقط يقود لقرار خاطئ بإيقاف حملة مربحة فعلياً؛ القيمة الحقيقية للعميل تُقاس بإجمالي ما ينفقه معك طوال علاقته (LTV) لا بأول فاتورة. إن كانت قيمة العميل الممتدة أعلى بكثير من تكلفة اكتسابه، فالاستمرار في الإنفاق قرار صحيح حتى مع خسارة ظاهرية أولية، شريطة التأكد فعلياً من معدل تكرار الشراء لا افتراضه فقط.",
+"h": "لا تحكم على قيمة عميل من أول فاتورة؛ العلاقة الممتدة معه هي المقياس الحقيقي للربح."
+},
+{
+"id": 68,
+"g": "التسويق الرقمي ووهم الأرقام",
+"title": "شركة تشتري متابعين ومراجعات وهمية",
+"scenario": "مطعم جديد اشترى 5,000 متابع وهمي و200 مراجعة إيجابية مزيفة على قوقل خلال أسبوع لتحسين مظهره، لكن منصة المراجعات اكتشفت النمط غير الطبيعي وأزالت الحساب بالكامل مع كل مراجعاته الحقيقية السابقة أيضاً.",
+"q": "لماذا يُعد شراء التفاعل المزيف مخاطرة أكبر من الفائدة المرجوة منه؟",
+"model": "المنصات الكبرى تملك خوارزميات كشف نمط تفاعل غير طبيعي، والعقوبة عند الاكتشاف تكون شاملة (حذف الحساب أو كل المراجعات، بما فيها الحقيقية)، فضلاً عن الضرر السمعي إذا اكتشف عملاء حقيقيون التلاعب. المصداقية الرقمية أصل تراكمي بطيء البناء وسريع الانهيار؛ لا يوجد بديل حقيقي عن بناء تفاعل عضوي ولو كان أبطأ.",
+"h": "ما يُشترى من ثقة مزيفة يُفقد دفعة واحدة عند الاكتشاف، ويأخذ معه الثقة الحقيقية التي بُنيت سابقاً."
+},
+{
+"id": 69,
+"g": "سلاسل التوريد والاستيراد",
+"title": "متجر يعتمد على مورد واحد فقط لكل منتجاته",
+"scenario": "متجر أدوات مطبخ يستورد 90% من بضاعته من مصنع واحد في الصين، وحين تأخر المصنع في الإنتاج شهرين بسبب مشكلة داخلية، توقف المتجر بالكامل عن استقبال طلبات جديدة لأكثر شهر.",
+"q": "ما مخاطر الاعتماد الكامل على مورد واحد، وكيف تُدار؟",
+"model": "مورد واحد يعني نقطة فشل وحيدة (Single Point of Failure) تُعطّل المشروع بالكامل عند أي خلل خارج عن السيطرة (تأخير إنتاج، مشكلة جمركية، إفلاس المورد). الحل: بناء علاقة مع مورد بديل ثانٍ ولو بحجم طلبات أصغر يُبقيه نشطاً وجاهزاً، بحيث يمكن التحول إليه سريعاً عند الحاجة دون بدء علاقة من الصفر وقت الأزمة.",
+"h": "لا تضع كل سلسلة توريدك في يد طرف واحد، مهما كانت العلاقة ممتازة؛ البديل الجاهز تأمين لا ترف."
+},
+{
+"id": 70,
+"g": "سلاسل التوريد والاستيراد",
+"title": "مستورد يفاجأ بتأخر الشحن في موسم الذروة",
+"scenario": "تاجر يستورد ألعاباً استعداداً لموسم العودة للمدارس، لكنه أرسل الطلبية قبل الموسم بثلاثة أسابيع فقط، فتأخرت الشحنة بسبب ازدحام الموانئ العالمي ووصلت بعد انتهاء الموسم بأسبوعين.",
+"q": "كيف يُخطَّط توقيت الاستيراد للمواسم الموسمية؟",
+"model": "يجب حساب «هامش أمان زمني» يشمل مدة الإنتاج، الشحن البحري الفعلي (وليس المعلن فقط)، التخليص الجمركي، والتوزيع الداخلي، مع إضافة فترة احتياطية 3-4 أسابيع على الأقل للتأخيرات غير المتوقعة، خصوصاً في مواسم الذروة العالمية حيث تزدحم الموانئ عالمياً وليس محلياً فقط. الطلب المبكر جداً أرخص وأأمن دائماً من الطلب المتأخر ولو بسعر أعلى قليلاً.",
+"h": "الشحن الدولي ليس علماً دقيقاً؛ خطط بهامش أمان زمني كبير خصوصاً في مواسم الذروة العالمية."
+},
+{
+"id": 71,
+"g": "سلاسل التوريد والاستيراد",
+"title": "مصنع يواجه تقلب أسعار المواد الخام العالمية",
+"scenario": "مصنع بلاستيك يشتري المادة الخام بسعر السوق العالمي المتقلب دون أي عقد ثابت، فارتفعت التكلفة 35% خلال ثلاثة أشهر بسبب أزمة إمداد عالمية أثرت على هامشه بشدة رغم عدم تغير أسعار بيعه.",
+"q": "كيف يحمي المصنع نفسه من تقلبات أسعار المواد الخام العالمية؟",
+"model": "التعرض الكامل لتقلب السوق العالمي دون أي تحوّط يجعل ربحية المصنع رهينة عوامل خارج سيطرته بالكامل. أدوات الحماية: التعاقد مع الموردين على أسعار ثابتة لفترات محددة (6-12 شهراً) مقابل التزام بحجم شراء معين، تخزين احتياطي استراتيجي من المادة الخام عند انخفاض الأسعار، وربط جزء من عقود البيع بشرط تعديل السعر عند تجاوز تقلب معين في تكلفة المدخلات.",
+"h": "من يبيع بسعر ثابت ويشتري بسعر متقلب يبني ربحيته على الحظ لا على الإدارة."
+},
+{
+"id": 72,
+"g": "سلاسل التوريد والاستيراد",
+"title": "متجر يخزّن بضاعة أكثر من حاجته الفعلية",
+"scenario": "تاجر اشترى كمية كبيرة من بضاعة موسمية بسعر جملة مغرٍ ظناً منه أنه يوفر المال، لكن 40% منها بقيت مخزّنة دون بيع لأكثر من سنة، فتجمّد رأس مال كبير في مخزون راكد بدل استثماره في نمو المشروع.",
+"q": "متى يكون شراء الجملة بكميات كبيرة قراراً خاطئاً رغم انخفاض سعر الوحدة؟",
+"model": "توفير سعر الوحدة عند الشراء بالجملة وهمي إن لم يُباع المخزون فعلياً خلال فترة معقولة، لأن تكلفة التخزين وتجميد رأس المال (وفرصة استخدامه في نمو آخر) قد تفوق الوفر الظاهري في السعر. القاعدة العملية: لا تشترِ كمية تفوق مبيعات 2-3 أشهر متوقعة إلا إذا كان المنتج غير موسمي وثابت الطلب فعلياً، وتحقق من تاريخ مبيعات فعلي قبل الشراء بناءً على التوقع فقط.",
+"h": "رأس المال المجمّد في مخزون راكد أغلى من فرق السعر الذي وفّرته عند الشراء بالجملة."
+},
+{
+"id": 73,
+"g": "سلاسل التوريد والاستيراد",
+"title": "شركة أغذية تتجاهل تتبع تواريخ الصلاحية بدقة",
+"scenario": "سلسلة متاجر بقالة صغيرة تدير مخزونها يدوياً دون نظام «الوارد أولاً صادر أولاً» (FIFO)، فتُكتشف دورياً منتجات منتهية الصلاحية على الرفوف، مما عرّض المتجر لغرامة من الجهة الرقابية وضرر سمعي.",
+"q": "ما الحل التشغيلي لضمان عدم تكرار هذه المخالفة؟",
+"model": "غياب نظام منهجي لترتيب المخزون يجعل الاعتماد على انتباه الموظف الفردي وحده غير كافٍ. الحل: تطبيق نظام «الوارد أولاً صادر أولاً» فعلياً في ترتيب الرفوف (البضاعة الأقدم صلاحية للأمام)، جدول فحص دوري أسبوعي مسؤول عنه شخص محدد بالاسم، وتفعيل تنبيهات رقمية بسيطة (حتى عبر جدول إلكتروني) قبل اقتراب انتهاء الصلاحية بأسابيع كافية للتصريف بعروض تخفيض بدل الإتلاف الكامل.",
+"h": "السلامة الغذائية ليست مسؤولية عامة موزعة على الجميع، بل يجب أن يكون لها مالك واحد محدد ونظام يومي واضح."
+},
+{
+"id": 74,
+"g": "الملكية الفكرية والعلامة التجارية",
+"title": "مشروع ينمو باسم تجاري غير مسجَّل",
+"scenario": "بعد نجاح متجر أزياء لمدة عامين وبناء جمهور واسع باسم معيّن، اكتشف صاحبه أن منافساً سجّل الاسم التجاري نفسه كعلامة تجارية رسمية، وطالبه قانونياً بالتوقف عن استخدامه فوراً.",
+"q": "لماذا يجب تسجيل العلامة التجارية مبكراً وليس بعد تحقيق النجاح؟",
+"model": "بناء علامة تجارية دون تسجيلها رسمياً يعني أن أي طرف آخر يمكنه تسجيلها أولاً ومطالبتك قانونياً بالتوقف عن استخدام اسم أنفقت سنوات وميزانية في بنائه، وقد يخسر المشروع هويته بالكامل رغم نجاحه التجاري. تسجيل العلامة التجارية خطوة قانونية رخيصة نسبياً في بداية المشروع، وتصبح شبه مستحيلة أو مكلفة جداً للتصحيح بعد بناء سمعة كبيرة باسم غير محمي.",
+"h": "بناء اسم تجاري ناجح دون حمايته القانونية استثمار في أصل يمكن أن يُنتزع منك في أي لحظة."
+},
+{
+"id": 75,
+"g": "الملكية الفكرية والعلامة التجارية",
+"title": "مصنع يكتشف تقليد منتجه من مصنع آخر",
+"scenario": "مصنع صغير طوّر تصميماً مبتكراً لأداة منزلية بعد أشهر من البحث والتطوير، وبعد إطلاقه بثلاثة أشهر وجد نسخة مطابقة تقريباً تُباع بسعر أقل من مصنع منافس لم يتحمل أي تكلفة تطوير.",
+"q": "كيف يحمي المصنع ابتكاراته من التقليد السريع في المستقبل؟",
+"model": "بدون حماية قانونية (براءة اختراع أو نموذج صناعي مسجَّل)، فإن أي ابتكار قابل للنسخ فور طرحه في السوق دون أي رادع قانوني ضد المقلّد. الحل الوقائي: تسجيل حماية الملكية الفكرية للتصميمات الجوهرية قبل الإطلاق التجاري لا بعده، مع العلم أن الحماية القانونية وحدها لا تكفي — يجب أيضاً بناء ميزة تنافسية غير قابلة للنسخ السريع مثل جودة التصنيع أو خدمة ما بعد البيع.",
+"h": "الابتكار بلا حماية قانونية دعوة مفتوحة للتقليد؛ سجّل حقك قبل أن يسبقك غيرك للسوق بنسخة أرخص."
+},
+{
+"id": 76,
+"g": "الملكية الفكرية والعلامة التجارية",
+"title": "شركة تستخدم صوراً وموسيقى بلا ترخيص",
+"scenario": "متجر إلكتروني يستخدم صوراً احترافية وموسيقى خلفية في إعلاناته منسوخة من الإنترنت دون ترخيص، وتلقّى إشعاراً قانونياً من أصحاب الحقوق يطالب بتعويض مالي وإزالة فورية للمحتوى.",
+"q": "ما الخطأ الشائع في التعامل مع المحتوى الجاهز على الإنترنت، وكيف يُتجنب؟",
+"model": "توفر صورة أو مقطع على الإنترنت لا يعني أنه مجاني الاستخدام تجارياً؛ حقوق الملكية الفكرية تحمي المحتوى بغض النظر عن سهولة الوصول إليه، والاستخدام غير المرخّص يعرّض الشركة لمطالبات تعويض قد تفوق تكلفة الترخيص الأصلي أضعافاً. الحل: الاعتماد على مكتبات محتوى مرخّصة تجارياً (Stock)، أو إنتاج محتوى أصلي، مع التحقق دائماً من نوع الترخيص (شخصي أم تجاري) قبل أي استخدام في مواد تسويقية.",
+"h": "مجانية الوصول لمحتوى على الإنترنت لا تعني إباحة استخدامه تجارياً؛ تحقق من الترخيص قبل النشر لا بعد المطالبة القانونية."
+},
+{
+"id": 77,
+"g": "الامتياز التجاري",
+"title": "صاحب مقهى ناجح يفكر في بيع امتياز مبكراً",
+"scenario": "صاحب مقهى واحد حقق نجاحاً قوياً خلال 8 أشهر فقط، ويتلقى عروضاً من مستثمرين لفتح فروع امتياز في مدن أخرى، لكن نموذج التشغيل غير موثّق بالكامل ويعتمد بشكل كبير على حضوره الشخصي اليومي.",
+"q": "ما الشرط الأساسي الذي يجب توفره قبل بيع أي امتياز تجاري؟",
+"model": "الامتياز التجاري (Franchise) يبيع في جوهره «نظاماً قابلاً للتكرار» لا مجرد اسم ناجح؛ إن كان النجاح معتمداً على حضور المالك الشخصي أو مهارات فردية غير موثّقة، فإن أي فرع امتياز جديد سيفشل في تكرار التجربة نفسها. قبل التفكير في البيع، يجب توثيق كل عملية تشغيلية بدقة (وصفات، معايير خدمة، إدارة مخزون) بحيث ينجح الفرع الجديد بمشغّل مختلف تماماً دون تدخل المؤسس الأصلي.",
+"h": "لا تبيع امتيازاً لنجاح يعتمد عليك شخصياً؛ بِع نظاماً موثّقاً ينجح حتى في غيابك."
+},
+{
+"id": 78,
+"g": "الامتياز التجاري",
+"title": "مشتري امتياز يفاجأ برسوم مستمرة لم يحسبها",
+"scenario": "مستثمر اشترى امتياز سلسلة مطاعم مقابل 300,000 ريال رسوم دخول، لكنه لم يدرس بعناية أن العقد يتضمن أيضاً نسبة 8% من الإيراد الشهري كرسوم امتياز مستمرة و2% إضافية إلزامية لصندوق التسويق المركزي، مما قلّص هامشه الفعلي بشكل كبير.",
+"q": "ما البنود التي يجب فحصها بدقة قبل شراء أي امتياز تجاري؟",
+"model": "رسوم الدخول الأولية جزء صغير فقط من التكلفة الحقيقية للامتياز؛ يجب دراسة كامل هيكل الرسوم المستمرة (نسبة من الإيراد، رسوم تسويق مركزي، رسوم تجديد دوري)، إلزامية الشراء من موردين محددين بأسعار قد تكون أعلى من السوق، ومدى الحرية في التسعير المحلي. حساب الهامش الصافي الفعلي بعد كل هذه الالتزامات — لا رسوم الدخول فقط — هو ما يحدد جدوى الاستثمار الحقيقية.",
+"h": "رسوم دخول الامتياز مجرد بداية القصة المالية؛ اقرأ بند الرسوم المستمرة بدقة أكبر من بند الرسوم الأولى."
+},
+{
+"id": 79,
+"g": "الامتياز التجاري",
+"title": "مانح امتياز يفقد سيطرته على جودة الفروع",
+"scenario": "سلسلة حلويات منحت امتيازاً لخمسة فروع في مدن مختلفة، لكن غياب معايير رقابة موحدة أدى إلى تفاوت كبير في جودة المنتج وخدمة العملاء بين الفروع، مما أضر بسمعة العلامة التجارية ككل رغم نجاح بعض الفروع فردياً.",
+"q": "كيف يحافظ مانح الامتياز على اتساق الجودة عبر فروع لا يديرها بنفسه؟",
+"model": "سمعة العلامة التجارية أصل مشترك بين كل الفروع؛ فشل فرع واحد في الجودة يضر بصورة كل الفروع الأخرى الناجحة. يجب بناء نظام رقابة جودة موحّد (زيارات تفتيش دورية، عملاء سريون، معايير قياس واضحة لكل فرع)، مع حق تعاقدي واضح لسحب الامتياز عند التكرار في المخالفة، وتدريب موحّد إلزامي لكل فرع جديد قبل الافتتاح لا بعده.",
+"h": "سمعتك التجارية أصل مشترك بين كل من يحمل اسمك؛ لا تمنح الاسم دون آلية تضمن حمايته من الجميع."
+},
+{
+"id": 80,
+"g": "الموارد البشرية ونظام العمل",
+"title": "شركة تنهي خدمات موظف دون احتساب مكافأة نهاية الخدمة",
+"scenario": "شركة صغيرة أنهت عقد موظف بعد 3 سنوات خدمة دون احتساب مكافأة نهاية الخدمة المستحقة نظاماً، ظناً من صاحب العمل أن الأمر اختياري، فتقدّم الموظف بشكوى رسمية كلّفت الشركة غرامة أكبر من المكافأة الأصلية.",
+"q": "لماذا يُعد إغفال الاستحقاقات النظامية مخاطرة مالية أكبر من قيمتها الأصلية؟",
+"model": "مكافأة نهاية الخدمة استحقاق نظامي إلزامي محسوب بصيغة واضحة حسب مدة الخدمة، وليس مبلغاً اختيارياً بيد صاحب العمل. تجاهله لا يوفر المال بل يؤجل التزاماً سيُطالَب به لاحقاً مع فوائد وغرامات تأخير محتملة عبر الجهات المختصة. الأفضل: احتساب مخصص شهري لمكافأة نهاية الخدمة كبند في الميزانية التشغيلية منذ توظيف كل موظف، بدل مفاجأة مالية عند إنهاء عقده.",
+"h": "الاستحقاقات النظامية للموظف ليست اختيارية ولا قابلة للتأجيل بالأمل؛ احتسبها كالتزام شهري لا كمفاجأة نهائية."
+},
+{
+"id": 81,
+"g": "الموارد البشرية ونظام العمل",
+"title": "موظف يعمل ساعات إضافية دون تعويض واضح",
+"scenario": "متجر تجزئة يطلب من موظفيه البقاء ساعتين إضافيتين يومياً بانتظام دون أجر إضافي أو تعويض واضح، مما أدى لاستقالة جماعية مفاجئة لثلاثة موظفين في أسبوع واحد قبل موسم مبيعات مهم.",
+"q": "ما تكلفة تجاهل الأجر الإضافي على المدى المتوسط، حتى لو بدا توفيراً فورياً؟",
+"model": "توفير أجر الساعات الإضافية على المدى القصير يخلق استياءً تراكمياً يظهر فجأة كاستقالات جماعية في أسوأ التوقيتات، وتكلفة التوظيف والتدريب العاجل البديل أعلى بكثير من الأجر الإضافي الموفَّر أصلاً. الحل: احتساب الساعات الإضافية وفق النظام بدقة، أو إعادة هيكلة الجدول الزمني بمناوبات كافية تغني عن الحاجة للساعات الإضافية المتكررة أصلاً.",
+"h": "توفير أجر إضافي صغير اليوم قد يكلفك فريقاً كاملاً غداً في أسوأ توقيت ممكن."
+},
+{
+"id": 82,
+"g": "الموارد البشرية ونظام العمل",
+"title": "شركة توظف بدون تقييم أداء دوري موثّق",
+"scenario": "شركة خدمات توظف وتُقيّم موظفيها بانطباع شخصي غير موثّق، فحين احتاجت لإنهاء خدمات موظف ضعيف الأداء لم تملك أي سجل رسمي يدعم قرارها، مما عرّضها لنزاع عمالي طويل.",
+"q": "لماذا يُعد التوثيق الدوري لأداء الموظفين حماية قانونية وإدارية معاً؟",
+"model": "القرارات المتعلقة بالموظفين (ترقية، إنذار، إنهاء خدمة) تحتاج سنداً موثّقاً يثبت أنها مبنية على أداء فعلي لا تحيز شخصي، خصوصاً عند أي نزاع لاحق أمام الجهات المختصة. نظام تقييم دوري بسيط (كل 3-6 أشهر) موثّق كتابياً بمعايير واضحة يحمي الشركة قانونياً ويمنح الموظف فرصة حقيقية للتحسن قبل أي قرار حاسم، بدل مفاجأته بقرار مبني على انطباع متراكم غير مُعلن له.",
+"h": "القرار الإداري بلا توثيق مسبق ضعيف قانونياً مهما كان عادلاً في جوهره؛ وثّق قبل أن تحتاج للدفاع عن قرارك."
+},
+{
+"id": 83,
+"g": "الموارد البشرية ونظام العمل",
+"title": "شركة تعتمد كلياً على موظف واحد يملك كل المعرفة",
+"scenario": "شركة توزيع صغيرة تعتمد كلياً على محاسب واحد يعرف كل تفاصيل الحسابات والموردين والعملاء دون أي توثيق مكتوب، فحين استقال فجأة توقفت عمليات الفوترة والتحصيل بالكامل لثلاثة أسابيع.",
+"q": "كيف تحمي الشركة نفسها من مخاطر اعتماد المعرفة على شخص واحد فقط؟",
+"model": "تركّز المعرفة التشغيلية الحرجة في شخص واحد دون توثيق يخلق «نقطة فشل وحيدة» تُشل الشركة عند غيابه المفاجئ (استقالة، مرض، سفر). الحل: توثيق كل العمليات الحرجة في دليل تشغيلي مكتوب يمكن لأي بديل الرجوع إليه، وتدريب شخص ثانٍ ولو جزئياً على المهام الأساسية، بحيث لا يتوقف عمل الشركة كلياً بغياب فرد واحد مهما كان مهماً.",
+"h": "أي معرفة حرجة موجودة في رأس شخص واحد فقط هي مخاطرة مؤجلة على الشركة، لا مجرد كفاءة فردية تُحمد."
+},
+{
+"id": 84,
+"g": "الموارد البشرية ونظام العمل",
+"title": "مدير يخلط بين الصداقة والإدارة مع فريقه",
+"scenario": "مؤسس شركة ناشئة صغيرة يدير فريقاً من أصدقائه المقربين، فيتجنب محاسبتهم على التأخر المتكرر وضعف الأداء خوفاً من الإضرار بالصداقة، مما أدى لتراخي عام في الالتزام لدى بقية الفريق أيضاً.",
+"q": "لماذا تصبح الصداقة عبئاً إدارياً إن لم تُفصل حدودها عن العلاقة المهنية؟",
+"model": "غياب المحاسبة الواضحة بسبب الصداقة الشخصية يُرسل رسالة ضمنية لبقية الفريق بأن المعايير غير موحدة، مما يضر بالانضباط العام ويخلق شعوراً بالظلم لدى من يُحاسَب بصرامة أكبر. الحل: فصل واضح بين العلاقة الشخصية وساعات العمل، تطبيق نفس معايير الأداء والمحاسبة على الجميع بلا استثناء، مع الحفاظ على الصداقة خارج سياق تقييم الأداء الرسمي.",
+"h": "القيادة العادلة تعني تطبيق نفس المعيار على صديقك وعلى الغريب؛ استثناء واحد يهدم ثقة الفريق كله."
+},
+{
+"id": 85,
+"g": "تسرب العملاء (Churn)",
+"title": "تطبيق اشتراكات يخسر 15% من مشتركيه شهرياً",
+"scenario": "تطبيق تمارين رياضية يكتسب 300 مشترك جديد شهرياً بسعر اشتراك 50 ريالاً، لكنه يخسر 15% من قاعدة مشتركيه الحاليين كل شهر، مما يعني أن نموه الحقيقي أبطأ بكثير مما تعكسه أرقام الاكتساب وحدها.",
+"q": "لماذا يُعد معدل التسرب (Churn) أهم من معدل الاكتساب في نماذج الاشتراك؟",
+"model": "معدل تسرب مرتفع يعني أن التطبيق يملأ دلواً مثقوباً؛ بمعدل تسرب 15% شهرياً، يفقد التطبيق تقريباً كامل قاعدته الحالية خلال أقل من سنة إن لم يستمر بالتعويض المستمر عبر اكتساب مكلف. يجب التحقيق في سبب التسرب الفعلي (غياب متابعة بعد الاشتراك؟ محتوى مكرر؟ منافس أرخص؟) وخفضه قبل زيادة ميزانية الاكتساب، لأن خفض التسرب من 15% إلى 5% يعادل أثر مضاعفة ميزانية التسويق تقريباً.",
+"h": "نمو نماذج الاشتراك محكوم بالاحتفاظ لا بالاكتساب وحده؛ عالج التسرب أولاً قبل ضخ مزيد من العملاء في دلو مثقوب."
+},
+{
+"id": 86,
+"g": "تسرب العملاء (Churn)",
+"title": "خدمة اشتراك شهري بلا محتوى أو قيمة متجددة",
+"scenario": "منصة تعليمية تقدّم نفس الدروس الأساسية منذ إطلاقها قبل عام دون تحديث، فيشترك الطلاب لشهر أو شهرين فقط لإتمام المحتوى ثم يلغون الاشتراك بمجرد الانتهاء منه.",
+"q": "ما الخلل البنيوي في نموذج هذا الاشتراك؟",
+"model": "نموذج الاشتراك الشهري مبني على افتراض قيمة متجددة باستمرار تبرر الدفع الشهري المتكرر؛ محتوى ثابت لا يتجدد يحوّل الاشتراك عملياً إلى «شراء لمرة واحدة» مقنّع بغلاف اشتراك. الحل: إما التحول لنموذج دفع لمرة واحدة يعكس طبيعة المنتج الفعلية، أو إعادة هيكلة المنتج بمحتوى متجدد فعلياً (دروس جديدة، جلسات مباشرة، مجتمع نشط) يبرر استمرار الدفع الشهري.",
+"h": "اشتراكك الشهري يجب أن يبرر نفسه كل شهر بقيمة جديدة، وإلا أصبح مجرد رسوم يبحث عنها العميل ليلغيها."
+},
+{
+"id": 87,
+"g": "تسرب العملاء (Churn)",
+"title": "متجر لا يعرف لماذا يلغي العملاء اشتراكهم",
+"scenario": "خدمة توصيل مواد غذائية بالاشتراك تخسر عملاء شهرياً دون أن تعرف السبب الحقيقي، لأن نموذج الإلغاء لا يطلب من العميل أي سبب، ولا تُجرى أي متابعة بعد الإلغاء.",
+"q": "لماذا يُعد فهم سبب الإلغاء أهم استثمار تسويقي يمكن للشركة القيام به هنا؟",
+"model": "غياب بيانات سبب الإلغاء يجعل أي محاولة تحسين مجرد تخمين عشوائي؛ استبيان قصير إلزامي عند الإلغاء (سعر مرتفع؟ جودة؟ لا حاجة له الآن؟ تجربة تقنية سيئة؟) يحوّل كل عميل مغادر إلى مصدر معلومة قابلة للعمل. الأهم: تصنيف أسباب الإلغاء وتتبعها كمؤشر شهري رئيسي بنفس أهمية مؤشر الاكتساب، لأن معالجة السبب الأكثر تكراراً قد توقف نزيفاً أكبر من أي حملة اكتساب جديدة.",
+"h": "العميل المغادر يحمل معه أثمن معلومة تسويقية مجانية؛ لا تدعه يرحل دون أن تسأله لماذا."
+},
+{
+"id": 88,
+"g": "تسرب العملاء (Churn)",
+"title": "شركة تركّز على استرداد العملاء المُلغين بخصومات فقط",
+"scenario": "شركة اتصالات تحاول استعادة كل عميل ألغى اشتراكه بعرض خصم 30% تلقائي، فتعلّم بعض العملاء تكرار الإلغاء والاشتراك مجدداً فقط للحصول على الخصم المتكرر، مما أضر بربحية الشركة على المدى الطويل.",
+"q": "ما مخاطر الاعتماد الكلي على الخصم كأداة وحيدة لاسترداد العملاء؟",
+"model": "الخصم التلقائي عند كل إلغاء يُنشئ حافزاً سلوكياً معاكساً (يُعرف بمشكلة «Gaming the system») يستغله جزء من العملاء لتعظيم مكاسبهم على حساب هامش الشركة، بدل معالجة السبب الجذري لرغبتهم بالإلغاء أصلاً. الحل الأفضل: تخصيص عرض الاسترداد حسب سبب الإلغاء الفعلي (خصم لمن غادر بسبب السعر، ميزة إضافية لمن غادر بسبب نقص قيمة)، مع سقف واضح لعدد مرات الاستفادة من عروض الاسترداد لكل عميل.",
+"h": "أي أداة استرداد ثابتة يمكن التنبؤ بها ستُستغل عاجلاً أو آجلاً؛ اربط الحل بالسبب الفعلي لا بحل عام واحد للجميع."
+},
+{
+"id": 89,
+"g": "التمويل ومصادر رأس المال",
+"title": "مؤسس يموّل نمو مشروعه بالكامل من بطاقات ائتمان شخصية",
+"scenario": "صاحب مشروع صغير موّل توسعه في المخزون عبر عدة بطاقات ائتمانية شخصية بفوائد مرتفعة، فوصل حجم الفوائد الشهرية إلى مبلغ يوازي ثلث هامش ربح المشروع نفسه.",
+"q": "ما مخاطر الاعتماد على التمويل الاستهلاكي المرتفع الفائدة لتمويل نمو المشروع؟",
+"model": "فوائد بطاقات الائتمان الشخصية من أغلى أشكال التمويل المتاحة، وتحويلها إلى مصدر تمويل أساسي للنمو يعني أن جزءاً كبيراً من هامش ربح المشروع يذهب لخدمة الدين لا لتطويره. الحل: البحث عن تمويل تجاري مخصص (قروض بنكية للمنشآت الصغيرة، صناديق دعم رسمية) بفوائد أقل بكثير وشروط أنسب لطبيعة نمو المشروع، مع اعتبار الاقتراض الشخصي عالي الفائدة حلاً طارئاً قصير المدى فقط لا استراتيجية تمويل دائمة.",
+"h": "ليس كل تمويل متاح تمويلاً رشيداً؛ كلفة المال نفسها قرار استراتيجي يستحق نفس عناية قرار استخدامه."
+},
+{
+"id": 90,
+"g": "التمويل ومصادر رأس المال",
+"title": "مشروع يقبل تمويلاً من مستثمر بشروط غامضة",
+"scenario": "مؤسس تطبيق ناشئ قبل تمويلاً بقيمة 500,000 ريال دون فهم كامل لبنود «حقوق التصفية التفضيلية» في العقد، فحين بِيعت الشركة لاحقاً بقيمة متواضعة، حصل المستثمر على كامل المبلغ تقريباً ولم يتبقَّ شيء يُذكر للمؤسس رغم سنوات العمل.",
+"q": "لماذا يُعد فهم بنود العقد التمويلي أهم من مبلغ التمويل نفسه؟",
+"model": "شروط التمويل (مثل حقوق التصفية التفضيلية، نسبة التخفيف المستقبلي، حقوق الفيتو) تحدد فعلياً من يستفيد وبأي ترتيب عند أي خروج مستقبلي (بيع، إغلاق)، وقد تجعل مبلغاً كبيراً من التمويل مفيداً على الورق لكنه مُجحف عملياً بحق المؤسس عند التصفية. يجب دائماً الاستعانة بمستشار قانوني متخصص في عقود الاستثمار قبل التوقيع، بغض النظر عن حجم المبلغ المعروض أو إلحاح الحاجة إليه.",
+"h": "مبلغ التمويل رقم واحد في القصة؛ شروط التمويل هي التي تحدد من يملك القصة فعلياً في النهاية."
+},
+{
+"id": 91,
+"g": "التمويل ومصادر رأس المال",
+"title": "مشروع يعتمد على تمويل جماعي (Crowdfunding) بلا خطة توزيع واضحة",
+"scenario": "مشروع منتج مبتكر جمع 400,000 ريال عبر حملة تمويل جماعي بنجاح كبير، لكن عدم وجود خطة إنتاج وتوزيع واقعية أدى لتأخر تسليم المنتج للداعمين أكثر من سنة كاملة عن الموعد الموعود، مما أضر بسمعة المشروع رغم نجاح التمويل نفسه.",
+"q": "لماذا لا يضمن نجاح حملة التمويل الجماعي نجاح تنفيذ المشروع؟",
+"model": "التمويل الجماعي يقيس حماس السوق للفكرة، لا القدرة التشغيلية الفعلية على التصنيع والتسليم في الوقت المحدد؛ كثير من المشاريع تُفاجَأ بتعقيدات التصنيع الفعلي بعد جمع المبلغ. يجب بناء خطة تصنيع وتوزيع واقعية بهامش زمني آمن قبل إطلاق الحملة، ووعد الداعمين بموعد تسليم متحفظ يمكن الالتزام به بسهولة بدل موعد طموح يصعب تحقيقه.",
+"h": "جمع المال هو أسهل جزء في القصة أحياناً؛ التحدي الحقيقي يبدأ بعد الحملة لا معها."
+},
+{
+"id": 92,
+"g": "التمويل ومصادر رأس المال",
+"title": "شركة صغيرة ترفض قرضاً بنكياً مدروساً خوفاً من الدين",
+"scenario": "صاحب مصنع صغير يرفض قرضاً بنكياً منخفض الفائدة لتوسيع خط الإنتاج رغم دراسة جدوى تظهر أن العائد المتوقع من التوسع يفوق تكلفة القرض بوضوح، فقط بسبب خوف عام من فكرة الاستدانة.",
+"q": "متى يكون الدين أداة نمو رشيدة لا مخاطرة يجب تجنبها بشكل مطلق؟",
+"model": "الدين ليس سيئاً أو جيداً بذاته، بل يُقاس بعائده مقابل تكلفته؛ إن كان العائد المتوقع من استخدام القرض (زيادة إنتاج، توسع سوق) أعلى بوضوح وبشكل موثوق من تكلفة فائدته، فرفضه بدافع الخوف العام يعني التفريط في نمو ممكن ومدروس. القرار الرشيد يقارن دائماً بين العائد المتوقع من الاستخدام وتكلفة التمويل الفعلية، لا بين «الدين» و«عدم الدين» كخيارين أخلاقيين مطلقين.",
+"h": "الدين أداة تُقاس بعائدها لا بذاتها؛ الخوف العام منه قد يكلفك فرصة نمو مدروسة بعناية."
+},
+{
+"id": 93,
+"g": "التمويل ومصادر رأس المال",
+"title": "مؤسس يبحث عن مستثمر قبل التحقق من نموذج العمل",
+"scenario": "صاحب فكرة تطبيق يقضي شهوراً يبحث عن مستثمرين ويعرض عرضه التقديمي (Pitch) على عشرات الجهات، بينما لم يطلق أي نسخة تجريبية من التطبيق ولم يتحقق من استعداد أي عميل حقيقي للدفع مقابله.",
+"q": "لماذا يُعد السعي للتمويل قبل التحقق من الفكرة قراراً مبكراً جداً غالباً؟",
+"model": "المستثمرون الجادون يبحثون عن دليل مبدئي على وجود طلب حقيقي (مستخدمين فعليين، مؤشرات نمو، أو حتى قائمة انتظار مدفوعة) لا فكرة نظرية فقط، وقضاء الوقت في البحث عن تمويل قبل هذا الدليل يستهلك طاقة كان يمكن توجيهها لبناء نسخة أولية تختبر الفكرة فعلياً بميزانية بسيطة. القاعدة العملية: تحقق من استعداد السوق للدفع أولاً بأرخص وسيلة ممكنة، ثم اطلب التمويل لتسريع ما أثبت نجاحه، لا لاختبار فكرة لم تُختبر أصلاً.",
+"h": "التمويل يُسرّع نموذجاً أثبت نفسه، لا يُثبت فكرة لم تُختبر بعد؛ اختبر قبل أن تطلب المال لتوسيع شيء غير مؤكد."
+},
+{
+"id": 94,
+"g": "الأمن السيبراني وحماية البيانات",
+"title": "متجر إلكتروني يخزّن بيانات دفع العملاء دون حماية كافية",
+"scenario": "متجر إلكتروني صغير طوّر موقعه بنفسه وخزّن أرقام بطاقات بعض العملاء في قاعدة بيانات غير مشفّرة لتسهيل عمليات الشراء المتكررة، وتعرّض الموقع لاختراق كشف بيانات مئات العملاء.",
+"q": "لماذا يُعد هذا الخطأ فادحاً حتى لو بدا حلاً عملياً في البداية؟",
+"model": "تخزين بيانات دفع حساسة مباشرة مسؤولية أمنية وقانونية ثقيلة تتطلب معايير امتثال صارمة (مثل معيار PCI DSS)، ولا يجب أبداً أن يتحملها متجر صغير بنفسه؛ الحل الصحيح هو الاعتماد الكامل على بوابات دفع معتمدة تتولى هي حفظ بيانات البطاقة بشكل مشفّر ومتوافق، بينما يحتفظ المتجر برمز مرجعي (Token) فقط دون البيانات الفعلية للبطاقة. أي اختراق لاحق يعرّض المتجر لمسؤولية قانونية ومالية وسمعية جسيمة يصعب التعافي منها.",
+"h": "بيانات الدفع الحساسة أمانة تقنية متخصصة؛ لا تحاول حفظها بنفسك مهما بدا ذلك موفراً للوقت أو التكلفة."
+},
+{
+"id": 95,
+"g": "الأمن السيبراني وحماية البيانات",
+"title": "شركة تفقد بيانات عملائها بسبب انقطاع بلا نسخ احتياطي",
+"scenario": "شركة خدمات تعتمد على جهاز حاسوب واحد لتخزين كل سجلات العملاء والفواتير دون أي نسخة احتياطية، وحين تعطّل الجهاز فجأة فقدت الشركة كل بيانات ثلاث سنوات من العمل دفعة واحدة.",
+"q": "لماذا يُعد غياب النسخ الاحتياطي مخاطرة وجودية للمشروع لا مجرد إزعاج تقني؟",
+"model": "البيانات (سجلات العملاء، الفواتير، تاريخ المعاملات) أصل من أصول الشركة بقدر أهمية أي أصل مادي آخر، وفقدانها الكامل قد يعني فعلياً فقدان القدرة على متابعة التحصيل أو خدمة العملاء الحاليين من الصفر. الحل البسيط والرخيص: نسخ احتياطي تلقائي دوري (يومي أو أسبوعي) على أكثر من موقع (تخزين سحابي + نسخة محلية منفصلة)، وهو إجراء بسيط التكلفة نسبياً مقارنة بحجم الكارثة المحتملة عند غيابه.",
+"h": "النسخة الاحتياطية أرخص تأمين يمكن أن تشتريه لأصل قد لا تدرك قيمته الحقيقية إلا بعد فقدانه."
+},
+{
+"id": 96,
+"g": "الأمن السيبراني وحماية البيانات",
+"title": "موظفون يستخدمون كلمات مرور ضعيفة ومشتركة",
+"scenario": "فريق صغير في شركة ناشئة يستخدم كلمة مرور واحدة بسيطة مشتركة بين عدة موظفين للدخول على حساب البريد الرسمي والحسابات المالية السحابية، وتعرّض الحساب لاختراق أدى لتحويل مبلغ مالي احتيالي.",
+"q": "ما الحد الأدنى من الممارسات الأمنية التي يجب أن تُطبَّق حتى في شركة صغيرة جداً؟",
+"model": "الاعتقاد بأن «الشركة صغيرة جداً لتُستهدف» خطأ شائع؛ الشركات الصغيرة هدف مفضّل للمهاجمين تحديداً لضعف إجراءاتها الأمنية. الحد الأدنى الضروري: كلمة مرور فريدة قوية لكل حساب وكل موظف، تفعيل التحقق بخطوتين على كل حساب مالي أو بريدي حساس، وصلاحيات وصول محدودة حسب الحاجة الفعلية لكل موظف لا وصول شامل للجميع.",
+"h": "الأمان السيبراني ليس رفاهية تقنية للشركات الكبرى فقط؛ الشركة الصغيرة بلا حماية هدف أسهل لا أقل عرضة للخطر."
+},
+{
+"id": 97,
+"g": "جودة المنتج والمراقبة",
+"title": "مصنع يكتشف عيباً في دفعة كبيرة بعد التوزيع",
+"scenario": "مصنع ملابس اكتشف بعد توزيع 5,000 قطعة على متاجر مختلفة أن هناك عيباً في خياطة نسبة منها بسبب خلل في إحدى المكائن، ولم يكن هناك أي فحص جودة عشوائي قبل الشحن لاكتشاف المشكلة مبكراً.",
+"q": "ما تكلفة غياب نظام فحص جودة، حتى لو بدا إجراءً إضافياً مكلفاً للوقت؟",
+"model": "اكتشاف عيب الجودة بعد التوزيع أعلى تكلفة بكثير من اكتشافه قبل الشحن، إذ يشمل استرجاع المنتجات، تعويض المتاجر، والضرر السمعي مع العملاء النهائيين الذين اشتروا المنتج فعلياً. نظام فحص جودة بسيط (عينة عشوائية من كل دفعة إنتاج قبل الشحن) تكلفته التشغيلية ضئيلة مقارنة بتكلفة أي استدعاء أو ضرر سمعي لاحق، ويجب أن يكون خطوة إلزامية غير قابلة للتخطي مهما ضغط الجدول الزمني.",
+"h": "فحص الجودة قبل الشحن يبدو تأخيراً غير ضروري حتى أول عيب يصل للعميل؛ حينها تُدرك أنه كان أرخص استثمار في المشروع."
+},
+{
+"id": 98,
+"g": "جودة المنتج والمراقبة",
+"title": "مطعم يتلقى شكاوى متكررة حول تذبذب جودة الطبق نفسه",
+"scenario": "مطعم يقدّم نفس الطبق بمذاق مختلف كل مرة حسب الطاهي المناوب، لأن الوصفة موجودة في ذاكرة الطهاة فقط دون مقاييس دقيقة موحّدة (كميات، أوقات طهي)، مما أدى لتراجع تقييمات المطعم رغم عدم تغيّر المكونات الأساسية.",
+"q": "كيف يضمن المطعم اتساق الجودة بغض النظر عن الطاهي المناوب؟",
+"model": "الاعتماد على الذاكرة والخبرة الشخصية للطهاة يجعل الجودة متغيرة بتغيّر الفرد المناوب، وهو خطر مباشر على سمعة العلامة التجارية التي يجب أن تكون متسقة. الحل: توثيق «وصفة معيارية» (Standard Recipe) دقيقة لكل طبق تشمل الكميات والأوزان وأوقات الطهي بالضبط، وتدريب كل طاهٍ جديد عليها بدقة، بحيث تصبح الجودة خاصية للنظام لا للفرد الذي يُنفّذه.",
+"h": "الجودة المعتمدة على مهارة فرد واحد هشة بطبيعتها؛ حوّلها إلى معيار موثّق يتكرر بنفس المستوى مع أي منفّذ."
+},
+{
+"id": 99,
+"g": "التوسع والفروع المتعددة",
+"title": "مشروع ناجح يتوسع لمدينة جديدة بنفس نموذج المدينة الأولى تماماً",
+"scenario": "سلسلة مطاعم نجحت بقوة في مدينة الرياض، ففتحت فرعاً مطابقاً تماماً (نفس القائمة، نفس الأسعار، نفس التصميم) في مدينة أخرى ذات ديموغرافيا وأنماط استهلاك مختلفة، وواجه الفرع الجديد إقبالاً ضعيفاً رغم النجاح الكبير للنموذج الأصلي.",
+"q": "لماذا لا يضمن نجاح النموذج في مدينة نجاحه الحرفي في مدينة أخرى؟",
+"model": "النجاح في سوق معين مرتبط بعوامل محلية دقيقة (دخل الأسرة المتوسط، أذواق محلية، مستوى المنافسة القائم، حتى ساعات ذروة الحركة) قد تختلف جذرياً بين المدن رغم كونها في الدولة نفسها. قبل أي توسع جغرافي، يجب إجراء دراسة سوق محلية مصغّرة للمدينة الجديدة تحديداً، والاستعداد لتعديل التسعير أو القائمة أو حتى حجم الفرع بما يناسب خصوصية السوق المحلي، بدل نسخ النموذج الناجح حرفياً بافتراض أن النجاح قابل للتكرار الآلي.",
+"h": "النجاح في سوق واحد درس مهم، لكنه ليس ضمانة؛ كل سوق جديد يستحق دراسته الخاصة لا نسخة طبق الأصل من سابقه."
+},
+{
+"id": 100,
+"g": "التوسع والفروع المتعددة",
+"title": "شركة تفتح فرعاً ثانياً قبل استقرار الفرع الأول مالياً",
+"scenario": "صاحب صالة ألعاب رياضية فتح فرعاً ثانياً بعد 5 أشهر فقط من افتتاح الفرع الأول، معتمداً على قرض جديد بينما الفرع الأول لم يصل بعد لنقطة التعادل، فوجد نفسه يدير عجزاً مضاعفاً في فرعين بدل فرع واحد.",
+"q": "ما المعيار المناسب لتحديد توقيت التوسع لفرع جديد؟",
+"model": "التوسع قبل تحقيق استقرار مالي فعلي في الفرع الأول (وليس فقط نجاحاً تشغيلياً أو إقبالاً جيداً) يضاعف المخاطرة بدل مضاعفة الفرصة، لأن أي فرع جديد يحتاج فترة تأسيس واستنزاف نقدي خاصة به قبل أن يصبح رابحاً. القاعدة العملية: لا يُفتح فرع جديد إلا بعد أن يحقق الفرع الحالي استقراراً في الربحية لعدة أشهر متتالية (وليس شهراً واحداً جيداً فقط)، مع التأكد أن التمويل الجديد لا يعتمد على افتراض تفاؤلي غير مختبر بأداء الفرع الجديد.",
+"h": "التوسع السريع يضاعف المخاطرة قبل أن يضاعف الأرباح إن لم يكن الأساس الأول مستقراً فعلياً؛ استقرار الفرع الأول شرط سابق لفتح الثاني لا خطوة موازية له."
+}
+];
+const GROUPS = [...new Set(CASES.map(c=>c.g))];
+
+/* ---------------- GLOSSARY ---------------- */
+const GLOSSARY = [
+  {key:'annualRevenue', term:'الإيرادات السنوية', aliases:['الإيرادات السنوية'],
+   def:'إجمالي المبيعات أو المقبوضات التي حققتها المنشأة خلال سنة كاملة قبل خصم أي تكاليف أو مصروفات — رقم إجمالي (Top Line) لا يعكس الربحية الفعلية بحد ذاته.'},
+  {key:'netProfit', term:'صافي الربح', aliases:['صافي الربح'],
+   def:'المبلغ المتبقي من الإيرادات بعد خصم جميع التكاليف والمصروفات والضرائب — المؤشر الحقيقي لربحية المنشأة، ويختلف عن الإيراد الذي هو رقم إجمالي فقط.'},
+  {key:'profitMargin', term:'هامش الربح', aliases:['هامش الربح','هامش ربح'],
+   def:'نسبة الربح إلى الإيراد أو التكلفة، وتُستخدم لقياس كفاءة التسعير — كلما ارتفع الهامش، بقي جزء أكبر من كل ريال مبيعات كربح فعلي.'},
+  {key:'bookProfit', term:'الربح الدفتري', aliases:['الربح الدفتري','رابح دفترياً'],
+   def:'الربح المُسجَّل في السجلات المحاسبية بناءً على مبيعات وفواتير مُصدرة، حتى لو لم تتحول بعد إلى نقد فعلي في حساب المنشأة — لهذا قد تكون منشأة «رابحة دفترياً» وتعاني أزمة سيولة حقيقية في الوقت نفسه.'},
+  {key:'breakEven', term:'نقطة التعادل', aliases:['نقطة التعادل','نقطة تعادل','نقطة تعادلك'],
+   def:'حجم المبيعات (بالوحدات أو بالقيمة) الذي تتساوى عنده الإيرادات مع إجمالي التكاليف، أي لا ربح ولا خسارة. أي مبيعات فوق هذه النقطة تمثل ربحاً فعلياً.'},
+  {key:'fixedCost', term:'التكلفة الثابتة', aliases:['التكلفة الثابتة','تكاليف ثابتة','التكاليف الثابتة'],
+   def:'التكاليف التي لا تتغير بتغيّر حجم المبيعات أو الإنتاج خلال فترة زمنية معينة، مثل الإيجار والرواتب الأساسية والتراخيص — تُدفع سواء بِعت وحدة واحدة أو ألف وحدة.'},
+  {key:'variableCost', term:'التكلفة المتغيرة', aliases:['التكلفة المتغيرة','تكلفة متغيرة','تكلفتها المتغيرة'],
+   def:'التكاليف التي تتغير طردياً مع حجم المبيعات أو الإنتاج، مثل تكلفة المواد الخام أو العمولة على كل عملية بيع — كلما بِعت أكثر، ارتفع إجماليها.'},
+  {key:'posDevice', term:'جهاز POS', aliases:['جهاز POS','POS'],
+   def:'جهاز نقاط البيع (Point of Sale) المستخدم لقبول مدفوعات البطاقات في المتاجر الفعلية، ويُصدر إيصال الدفع ويربط المعاملة ببوابة الدفع البنكية.'},
+  {key:'fxFee', term:'FX Fee', aliases:['FX fee','FX Fee','رسوم تحويل عملة'],
+   def:'رسوم تحويل العملة (Foreign Exchange Fee) التي تُضاف عند قبول أو إجراء معاملة بعملة مختلفة عن العملة المحلية، وتُحتسب عادة كنسبة إضافية فوق عمولة المعاملة العادية.'},
+  {key:'courseSale', term:'بيع دورة', aliases:['بيع دورة','بيع الدورة','سعر الكورس','بيع دورات'],
+   def:'نموذج عمل يقوم على بيع محتوى تدريبي منظم (دورة) مقابل رسوم لمرة واحدة أو ضمن اشتراك — يختلف عن نموذج الاشتراك المستمر لأن العميل يدفع غالباً مقابل محتوى محدد لا خدمة متجددة بلا نهاية.'},
+  {key:'noShow', term:'No-show', aliases:['No-show','No show'],
+   def:'حالة عدم حضور العميل لموعد محجوز مسبقاً دون إلغاء، وهي مشكلة شائعة في قطاعات الخدمات (عيادات، صالونات) تُهدر طاقة استيعابية مدفوعة التكلفة سلفاً.'},
+  {key:'retention', term:'Retention', aliases:['Retention'],
+   def:'الاحتفاظ بالعملاء الحاليين وتكرار تعاملهم مع المنشأة، بعكس «الاكتساب» الذي يعني جلب عملاء جدد. رفع معدل الاحتفاظ غالباً أرخص وأكثر ربحية من اكتساب عملاء جدد باستمرار.'},
+  {key:'contributionMargin', term:'هامش المساهمة', aliases:['هامش المساهمة'],
+   def:'الفرق بين سعر بيع الوحدة وتكلفتها المتغيرة فقط (قبل خصم التكاليف الثابتة) — يُستخدم مباشرة في حساب نقطة التعادل، ويُظهر مقدار مساهمة كل وحدة مباعة في تغطية التكاليف الثابتة ثم تحقيق الربح.'},
+  {key:'cashFlow', term:'التدفق النقدي', aliases:['التدفق النقدي'],
+   def:'حركة النقد الداخل والخارج من المنشأة خلال فترة معينة، بصرف النظر عن الأرباح المُسجَّلة دفترياً — منشأة رابحة على الورق قد تتوقف عن الدفع فعلياً إذا ساء تدفقها النقدي.'},
+  {key:'workingCapital', term:'رأس المال العامل', aliases:['رأس المال العامل'],
+   def:'الفرق بين الأصول المتداولة (نقد، مخزون، مستحقات) والالتزامات قصيرة الأجل — يقيس قدرة المنشأة على تغطية التزاماتها الجارية دون الحاجة لتمويل إضافي طارئ.'},
+  {key:'cac', term:'تكلفة اكتساب العميل (CAC)', aliases:['تكلفة اكتساب العميل','CAC'],
+   def:'اختصار Customer Acquisition Cost، أي إجمالي ما تنفقه المنشأة (تسويقاً ومبيعات) للحصول على عميل جديد واحد فعلياً. يجب مقارنتها دائماً بالقيمة الممتدة للعميل (LTV) لتقييم جدوى الإنفاق التسويقي.'},
+  {key:'ltv', term:'القيمة الممتدة للعميل (LTV)', aliases:['القيمة الممتدة للعميل','LTV'],
+   def:'اختصار Customer Lifetime Value، أي إجمالي ما يُتوقع أن ينفقه العميل الواحد مع المنشأة طوال فترة تعامله معها، لا في أول عملية شراء فقط — مؤشر أساسي لتقييم جدوى تكلفة اكتساب العملاء.'},
+  {key:'churn', term:'معدل التسرب (Churn)', aliases:['معدل التسرب','تسرب العملاء'],
+   def:'نسبة العملاء أو المشتركين الذين يتوقفون عن التعامل مع المنشأة خلال فترة معينة (عادة شهرياً)، وهو المقياس المعاكس للاحتفاظ (Retention) — ارتفاعه يعني أن المنشأة تخسر عملاءها بمعدل أسرع مما تكتسب.'},
+  {key:'crowdfunding', term:'التمويل الجماعي', aliases:['التمويل الجماعي','Crowdfunding'],
+   def:'أسلوب تمويل يجمع مبالغ صغيرة من عدد كبير من الداعمين عبر منصات إلكترونية مقابل المنتج نفسه أو حصة أو مكافأة، ويقيس بشكل مبدئي حماس السوق للفكرة أكثر مما يضمن القدرة على تنفيذها.'},
+  {key:'franchise', term:'الامتياز التجاري', aliases:['الامتياز التجاري'],
+   def:'نظام تعاقدي يسمح لطرف (المُمنح) باستخدام علامة تجارية ونموذج تشغيل ناجح تابع لطرف آخر (المانح) مقابل رسوم دخول ورسوم مستمرة، شريطة الالتزام بمعايير تشغيل موحّدة.'},
+  {key:'ip', term:'الملكية الفكرية', aliases:['الملكية الفكرية'],
+   def:'الحقوق القانونية التي تحمي إبداعات العقل مثل العلامات التجارية والتصاميم وبراءات الاختراع والمحتوى الإبداعي، وتمنع الآخرين من استخدامها تجارياً دون إذن.'},
+  {key:'vat', term:'ضريبة القيمة المضافة', aliases:['ضريبة القيمة المضافة'],
+   def:'ضريبة غير مباشرة تُفرض على معظم السلع والخدمات عند كل مرحلة من مراحل البيع، ويتحملها المستهلك النهائي بينما تُحصّلها المنشآت وتُورّدها للجهة الضريبية المختصة.'},
+  {key:'zakatBase', term:'الوعاء الزكوي', aliases:['الوعاء الزكوي','وعاء الزكاة'],
+   def:'الأساس المالي الذي تُحتسب عليه الزكاة الشرعية المستحقة على أموال المنشأة، ويختلف عن وعاء ضريبة الدخل في طريقة الاحتساب والجهات الخاضعة له.'},
+  {key:'freemium', term:'نموذج Freemium', aliases:['Freemium'],
+   def:'نموذج عمل يقدّم نسخة أساسية مجانية من المنتج لجذب قاعدة مستخدمين واسعة، بينما تُباع الميزات المتقدمة أو الإضافية مقابل اشتراك أو رسوم.'},
+];
+// Sort aliases by length (desc) across all terms so longer phrases match before shorter ones they contain
+const GLOSSARY_MATCHERS = GLOSSARY
+  .flatMap(g => g.aliases.map(a => ({alias:a, key:g.key})))
+  .sort((a,b)=> b.alias.length - a.alias.length);
+function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+const GLOSSARY_REGEX = new RegExp('(' + GLOSSARY_MATCHERS.map(m=>escapeRegExp(m.alias)).join('|') + ')', 'g');
+const GLOSSARY_ALIAS_TO_KEY = Object.fromEntries(GLOSSARY_MATCHERS.map(m=>[m.alias, m.key]));
+
+function highlightTerms(text){
+  if(!text) return '';
+  return text.replace(GLOSSARY_REGEX, (match)=>{
+    const key = GLOSSARY_ALIAS_TO_KEY[match];
+    return `<span class="term-highlight" data-term-key="${key}">${match}</span>`;
+  });
+}
+
+/* ---------------- STATE ---------------- */
+let currentCaseId = CASES[0].id;
+let letterheadSettings = {
+  enabled:true,
+  lines:["المملكة العربية السعودية","المؤسسة العامة للتدريب التقني والمهني","الكلية التقنية بأبها","قسم تقنية الأعمال"],
+  logo:null,
+  logoHidden:false
+};
+function normText(s){ return (s||'').toString().replace(/\s+/g,' ').trim(); }
+
+/* ---------------- STORAGE HELPERS ---------------- */
+async function safeGet(key, shared){
+  try{ const r = await window.storage.get(key, shared); return r ? r.value : null; }
+  catch(e){ return null; }
+}
+async function safeSet(key, value, shared){
+  try{ await window.storage.set(key, value, shared); return true; }
+  catch(e){ return false; }
+}
+
+/* ---------------- INIT ---------------- */
+async function loadLetterhead(){
+  const raw = await safeGet('settings:letterhead', true);
+  if(raw){ try{ letterheadSettings = {...letterheadSettings, ...JSON.parse(raw)}; }catch(e){} }
+}
+
+function renderLetterhead(){
+  const zone = document.getElementById('letterheadZone');
+  const textZone = document.getElementById('letterheadText');
+  const logoZone = document.getElementById('letterheadLogo');
+  if(!letterheadSettings.enabled){ zone.style.display='none'; return; }
+  zone.style.display='flex';
+  textZone.innerHTML = (letterheadSettings.lines||[]).filter(l=>l && l.trim()).map(l=>`<div class="lh-line">${l}</div>`).join('');
+  if(letterheadSettings.logoHidden){
+    logoZone.classList.add('lh-logo-hidden');
+    logoZone.innerHTML = '';
+  } else {
+    logoZone.classList.remove('lh-logo-hidden');
+    logoZone.innerHTML = letterheadSettings.logo ? `<img src="${letterheadSettings.logo}" alt="شعار الجهة">` : `<span class="ph">الشعار</span>`;
+  }
+}
+
+/* ---------------- NAV RENDER ---------------- */
+function renderNav(){
+  const nav = document.getElementById('navGroups');
+  nav.innerHTML = '';
+  GROUPS.forEach(g=>{
+    const block = document.createElement('div');
+    block.className='group-block';
+    const label = document.createElement('div');
+    label.className='group-label';
+    label.textContent = g;
+    block.appendChild(label);
+    CASES.filter(c=>c.g===g).forEach(c=>{
+      const btn = document.createElement('button');
+      btn.className='case-btn'+(c.id===currentCaseId?' active':'');
+      btn.dataset.id=c.id;
+      btn.innerHTML = `<span class="case-num">${c.id}</span><span>${c.title}</span>`;
+      btn.onclick = ()=>{
+        currentCaseId=c.id;
+        document.getElementById('caseLayout').classList.add('case-open');
+        renderNav(); renderCase();
+        window.scrollTo(0,0);
+      };
+      block.appendChild(btn);
+    });
+    nav.appendChild(block);
+  });
+}
+
+/* ---------------- CASE RENDER (presenter view) ---------------- */
+function renderCase(){
+  const c = CASES.find(x=>x.id===currentCaseId);
+  const area = document.getElementById('caseArea');
+
+  area.innerHTML = `
+    <button class="btn ghost back-to-list-btn" id="backToListBtn">◀ رجوع لقائمة الحالات</button>
+    <div class="case-card">
+      <div class="case-head">
+        <div class="eyebrow">حالة رقم ${String(c.id).padStart(2,'0')} — ${highlightTerms(c.g)}</div>
+        <h2>${highlightTerms(c.title)}</h2>
+      </div>
+      <div class="case-body">
+        <div class="scenario-box">${highlightTerms(c.scenario)}</div>
+        <div class="section-label">السؤال المطروح</div>
+        <p style="font-weight:600;font-size:15px;">${highlightTerms(c.q)}</p>
+        <div class="btn-row">
+          <button class="btn" id="revealBtn">عرض الحل النموذجي</button>
+          <button class="btn ghost" id="shareCaseBtn" title="مشاركة الحالة مع المتدربين عبر واتساب/تيليجرام">📤 مشاركة الحالة</button>
+        </div>
+        <div id="revealZone"></div>
+      </div>
+    </div>
+  `;
+
+  const backBtn = document.getElementById('backToListBtn');
+  if(backBtn) backBtn.onclick = ()=>{
+    document.getElementById('caseLayout').classList.remove('case-open');
+    window.scrollTo(0,0);
+  };
+  document.getElementById('shareCaseBtn').onclick = ()=> openShareModal(buildCaseShareText(c), c, 'case');
+  document.getElementById('revealBtn').onclick = ()=> showReveal(c);
+}
+
+function showReveal(c){
+  const zone = document.getElementById('revealZone');
+  zone.innerHTML = `
+    <div class="reveal">
+      <div class="section-label">الحل النموذجي المقترح</div>
+      <div class="model-answer"><span class="tag">مرجعي</span>${highlightTerms(c.model)}</div>
+      ${c.h?`<div class="wisdom-box"><span class="tag">حكمة</span>${highlightTerms(c.h)}</div>`:''}
+      <div class="btn-row" style="margin-top:10px;"><button class="btn ghost" id="shareSolutionBtn">📤 مشاركة الحل النموذجي</button></div>
+    </div>
+  `;
+  document.getElementById('shareSolutionBtn').onclick = ()=> openShareModal(buildSolutionShareText(c), c, 'solution');
+}
+
+/* ---------------- SHARE CASE / SOLUTION (WhatsApp / Telegram / copy) ---------------- */
+function plainText(s){
+  // يزيل أي وسوم HTML عالقة (احتياطاً) لأن النصوص المصدرية أصلاً نص عادي بدون وسوم
+  return (s==null?'':String(s)).replace(/<[^>]*>/g,'');
+}
+function buildCaseShareText(c){
+  return [
+    `📘 سجل القرار — حالة تدريبية رقم ${String(c.id).padStart(2,'0')}`,
+    `📂 المحور: ${plainText(c.g)}`,
+    `📌 ${plainText(c.title)}`,
+    ``,
+    `📝 السيناريو:`,
+    plainText(c.scenario),
+    ``,
+    `❓ السؤال المطروح:`,
+    plainText(c.q),
+    ``,
+    `✍️ الإجابة:`,
+    ``,
+    ``,
+    `👤 الاسم: `,
+    `🆔 الرقم الأكاديمي: `,
+    `🏫 الشعبة: `
+  ].join('\n');
+}
+function buildSolutionShareText(c){
+  const lines = [
+    `✅ الحل النموذجي — حالة رقم ${String(c.id).padStart(2,'0')}: ${plainText(c.title)}`,
+    ``,
+    `📝 الحل المقترح:`,
+    plainText(c.model)
+  ];
+  if(c.h){
+    lines.push(``, `💡 حكمة:`, plainText(c.h));
+  }
+  return lines.join('\n');
+}
+
+let pendingShareText = '';
+let pendingShareCase = null;
+let pendingShareKind = 'case';
+function openShareModal(text, caseObj, kind){
+  pendingShareText = text;
+  pendingShareCase = caseObj || null;
+  pendingShareKind = kind || 'case';
+  document.getElementById('shareNote').textContent = '';
+  document.getElementById('shareModal').style.display = 'flex';
+}
+function closeShareModal(){
+  document.getElementById('shareModal').style.display = 'none';
+}
+
+/* ---- Share as a formatted card image (same data as the shared text) ---- */
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = String(text).split(/\s+/);
+  let line = '';
+  for(const word of words){
+    const test = line ? line + ' ' + word : word;
+    if(ctx.measureText(test).width > maxWidth && line){
+      ctx.fillText(line, x, y);
+      line = word;
+      y += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  if(line){ ctx.fillText(line, x, y); y += lineHeight; }
+  return y;
+}
+function drawShareCard(ctx, c, kind, W){
+  // يرسم كل محتوى البطاقة بدءاً من y=190، ويعيد ارتفاع المحتوى الكلي المطلوب (بلا رسم الخلفية/الإطار)
+  const navy = '#1c2b3a', brass = '#a97c34', brassBright = '#c99a4a', ink = '#26241d';
+  ctx.direction = 'rtl'; ctx.textAlign = 'right';
+
+  let y = 190;
+
+  // نفس بيانات مشاركة واتساب: المحور + السيناريو + السؤال (أو الحل والحكمة للنسخة المحلولة)
+  ctx.fillStyle = navy;
+  ctx.font = '700 15px Tahoma, sans-serif';
+  ctx.fillText('📂 المحور: ' + c.g, W-50, y);
+  y += 34;
+
+  ctx.fillStyle = navy;
+  ctx.font = '700 18px Tahoma, sans-serif';
+  ctx.fillText('📝 السيناريو', W-50, y);
+  y += 34;
+  ctx.fillStyle = ink;
+  ctx.font = '16px Tahoma, sans-serif';
+  y = wrapCanvasText(ctx, c.scenario, W-50, y, W-100, 26);
+  y += 26;
+
+  ctx.fillStyle = navy;
+  ctx.font = '700 18px Tahoma, sans-serif';
+  ctx.fillText('❓ السؤال المطروح', W-50, y);
+  y += 34;
+  ctx.fillStyle = ink;
+  ctx.font = '16px Tahoma, sans-serif';
+  y = wrapCanvasText(ctx, c.q, W-50, y, W-100, 26);
+  y += 20;
+
+  if(kind === 'solution'){
+    ctx.fillStyle = brass;
+    ctx.font = '700 18px Tahoma, sans-serif';
+    ctx.fillText('✅ الحل النموذجي', W-50, y);
+    y += 34;
+    ctx.fillStyle = ink;
+    ctx.font = '16px Tahoma, sans-serif';
+    y = wrapCanvasText(ctx, c.model, W-50, y, W-100, 26);
+    if(c.h){
+      y += 20;
+      ctx.fillStyle = navy;
+      ctx.font = '700 17px Tahoma, sans-serif';
+      y = wrapCanvasText(ctx, '💡 ' + c.h, W-50, y, W-100, 26);
+    }
+  } else {
+    ctx.fillStyle = navy;
+    ctx.font = '700 18px Tahoma, sans-serif';
+    ctx.fillText('✍️ الإجابة:', W-50, y);
+    y += 40;
+    ctx.strokeStyle = '#8a95a3'; ctx.lineWidth = 1;
+    ctx.setLineDash([4,4]);
+    for(let i=0;i<4;i++){
+      ctx.beginPath();
+      ctx.moveTo(50, y);
+      ctx.lineTo(W-50, y);
+      ctx.stroke();
+      y += 36;
+    }
+    ctx.setLineDash([]);
+    y += 4;
+  }
+
+  // خانات بيانات المتدرب — تلي المحتوى مباشرة (بلا موضع ثابت) حتى تلائم أي طول محتوى
+  y += 26;
+  ctx.strokeStyle = brass; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(50,y); ctx.lineTo(W-50,y); ctx.stroke();
+  y += 40;
+  ctx.fillStyle = navy;
+  ctx.font = '700 17px Tahoma, sans-serif';
+  const fields = ['👤 الاسم: ______________________', '🆔 الرقم الأكاديمي: ______________________', '🏫 الشعبة: ______________________'];
+  fields.forEach(f=>{ ctx.fillText(f, W-50, y); y += 44; });
+
+  return y;
+}
+function buildShareCardCanvas(c, kind){
+  const W = 900;
+  // تمريرة قياس: نحسب الارتفاع الكلي اللازم بلا رسم فعلي مرئي (على قماش مؤقت)
+  const measureCanvas = document.createElement('canvas');
+  measureCanvas.width = W; measureCanvas.height = 10;
+  const measureCtx = measureCanvas.getContext('2d');
+  const contentBottom = drawShareCard(measureCtx, c, kind, W);
+  const H = Math.ceil(contentBottom) + 60;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const navy = '#1c2b3a', brassBright = '#c99a4a', parchment = '#efe7d6';
+
+  ctx.fillStyle = parchment;
+  ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = navy; ctx.lineWidth = 4;
+  ctx.strokeRect(14,14,W-28,H-28);
+
+  ctx.fillStyle = navy;
+  ctx.fillRect(30,30,W-60,120);
+  ctx.direction = 'rtl'; ctx.textAlign = 'right';
+  ctx.fillStyle = brassBright;
+  ctx.font = '700 20px Tahoma, sans-serif';
+  ctx.fillText('سجل القرار — حالة تدريبية رقم ' + String(c.id).padStart(2,'0'), W-50, 70);
+  ctx.fillStyle = '#fff';
+  ctx.font = '700 30px Tahoma, sans-serif';
+  wrapCanvasText(ctx, c.title, W-50, 115, W-100, 36);
+
+  drawShareCard(ctx, c, kind, W);
+
+  return canvas;
+}
+async function shareCardImage(){
+  if(!pendingShareCase){ return; }
+  const canvas = buildShareCardCanvas(pendingShareCase, pendingShareKind);
+  const blob = await new Promise(resolve=> canvas.toBlob(resolve, 'image/png'));
+  if(!blob){
+    document.getElementById('shareNote').textContent = 'تعذّر إنشاء صورة البطاقة.';
+    return;
+  }
+  const fileName = 'case-' + String(pendingShareCase.id).padStart(2,'0') + '.png';
+  const file = new File([blob], fileName, {type:'image/png'});
+  if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file], title:'سجل القرار'});
+      return;
+    }catch(e){ /* المستخدم ألغى المشاركة أو فشلت — نكمل بالتنزيل */ }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fileName;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  document.getElementById('shareNote').textContent = 'تم تنزيل صورة البطاقة — أرفقها في واتساب أو تيليجرام.';
+}
+async function copyShareText(text){
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  }catch(e){ /* fall through to legacy method */ }
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+document.getElementById('shareCopyBtn').onclick = async ()=>{
+  const ok = await copyShareText(pendingShareText);
+  document.getElementById('shareNote').textContent = ok ? 'تم نسخ النص. الصقه الآن في واتساب أو تيليجرام.' : 'تعذّر النسخ التلقائي — انسخ النص يدوياً.';
+};
+document.getElementById('shareWaBtn').onclick = ()=>{
+  window.open('https://wa.me/?text=' + encodeURIComponent(pendingShareText), '_blank');
+};
+document.getElementById('shareTgBtn').onclick = ()=>{
+  window.open('https://t.me/share/url?url=&text=' + encodeURIComponent(pendingShareText), '_blank');
+};
+document.getElementById('shareCardBtn').onclick = shareCardImage;
+document.getElementById('shareCancelBtn').onclick = closeShareModal;
+document.getElementById('shareModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'shareModal') closeShareModal();
+});
+
+/* ---------------- CONFIG (letterhead / logo) ---------------- */
+function renderConfigModal(){
+  const body = document.getElementById('configBody');
+  const lines = letterheadSettings.lines||[];
+  body.innerHTML = `
+    <div class="toggle-row">
+      <input type="checkbox" id="lhEnabled" ${letterheadSettings.enabled?'checked':''}>
+      <label for="lhEnabled">إظهار الترويسة في أعلى التطبيق</label>
+    </div>
+    <div class="lh-edit-row"><input type="text" id="lhLine0" value="${(lines[0]||'').replace(/"/g,'&quot;')}" placeholder="السطر الأول"></div>
+    <div class="lh-edit-row"><input type="text" id="lhLine1" value="${(lines[1]||'').replace(/"/g,'&quot;')}" placeholder="السطر الثاني"></div>
+    <div class="lh-edit-row"><input type="text" id="lhLine2" value="${(lines[2]||'').replace(/"/g,'&quot;')}" placeholder="السطر الثالث"></div>
+    <div class="lh-edit-row"><input type="text" id="lhLine3" value="${(lines[3]||'').replace(/"/g,'&quot;')}" placeholder="السطر الرابع"></div>
+    <div class="toggle-row" style="margin-top:10px;">
+      <input type="checkbox" id="lhLogoHidden" ${letterheadSettings.logoHidden?'checked':''}>
+      <label for="lhLogoHidden">إخفاء مكان الشعار كلياً من الترويسة</label>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin:10px 0;" id="lhLogoUploadRow">
+      <div class="logo-preview" id="lhLogoPreview">${letterheadSettings.logo?`<img src="${letterheadSettings.logo}">`:'<span class="ph" style="font-size:10px;font-family:\'IBM Plex Sans Arabic\';">لا يوجد</span>'}</div>
+      <div>
+        <input type="file" id="lhLogoInput" accept="image/*">
+        <div class="status-note">اختياري — يرفعه المدرب إذا رغب (PNG/JPG)</div>
+        <button class="btn ghost" id="lhLogoRemove" style="padding:5px 12px;font-size:12px;margin-top:6px;">إزالة الصورة فقط</button>
+      </div>
+    </div>
+    <div class="btn-row"><button class="btn" id="saveLhBtn">حفظ التهيئة</button></div>
+    <div class="status-note" id="saveLhNote"></div>
+  `;
+
+  let pendingLogo = letterheadSettings.logo;
+  function toggleLogoUploadRow(){
+    const hidden = document.getElementById('lhLogoHidden').checked;
+    document.getElementById('lhLogoUploadRow').style.opacity = hidden?'0.4':'1';
+    document.getElementById('lhLogoUploadRow').style.pointerEvents = hidden?'none':'auto';
+  }
+  document.getElementById('lhLogoHidden').addEventListener('change', toggleLogoUploadRow);
+  toggleLogoUploadRow();
+  document.getElementById('lhLogoInput').addEventListener('change', (e)=>{
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      pendingLogo = reader.result;
+      document.getElementById('lhLogoPreview').innerHTML = `<img src="${pendingLogo}">`;
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('lhLogoRemove').onclick = ()=>{
+    pendingLogo = null;
+    document.getElementById('lhLogoPreview').innerHTML = '<span class="ph" style="font-size:10px;font-family:\'IBM Plex Sans Arabic\';">لا يوجد</span>';
+  };
+  document.getElementById('saveLhBtn').onclick = async ()=>{
+    letterheadSettings = {
+      enabled: document.getElementById('lhEnabled').checked,
+      lines: [
+        document.getElementById('lhLine0').value.trim(),
+        document.getElementById('lhLine1').value.trim(),
+        document.getElementById('lhLine2').value.trim(),
+        document.getElementById('lhLine3').value.trim(),
+      ],
+      logo: pendingLogo,
+      logoHidden: document.getElementById('lhLogoHidden').checked,
+    };
+    await safeSet('settings:letterhead', JSON.stringify(letterheadSettings), true);
+    renderLetterhead();
+    document.getElementById('saveLhNote').textContent = 'تم حفظ التهيئة بنجاح.';
+    setTimeout(()=>{ const n=document.getElementById('saveLhNote'); if(n) n.textContent=''; },2000);
+  };
+}
+
+document.getElementById('btnConfig').onclick = ()=>{
+  renderConfigModal();
+  document.getElementById('configModal').style.display='flex';
+};
+document.getElementById('configCloseBtn').onclick = ()=>{
+  document.getElementById('configModal').style.display='none';
+};
+document.getElementById('configModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'configModal') document.getElementById('configModal').style.display='none';
+});
+
+
+/* ---------------- BOOK / PDF EXPORT (trainer only) ---------------- */
+function esc(s){
+  return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function buildBookHTML(withSolution){
+  const genDate = new Date().toLocaleDateString('ar-SA', {year:'numeric', month:'long', day:'numeric'});
+  const lhLines = (letterheadSettings.enabled ? (letterheadSettings.lines||[]).filter(l=>l && l.trim()) : []);
+  const lhLogo = (letterheadSettings.enabled && !letterheadSettings.logoHidden && letterheadSettings.logo) ? letterheadSettings.logo : null;
+
+  const studentFieldsHTML = !withSolution ? `
+    <div class="cover-student-fields">
+      <div class="cover-field"><span class="cf-label">اسم المتدرب</span><span class="cf-line"></span></div>
+      <div class="cover-field"><span class="cf-label">الرقم الأكاديمي</span><span class="cf-line"></span></div>
+      <div class="cover-field"><span class="cf-label">الشعبة</span><span class="cf-line"></span></div>
+    </div>` : '';
+
+  const coverHTML = `
+    <section class="book-page cover-page">
+      ${lhLines.length ? `
+        <div class="cover-letterhead">
+          <div class="cover-lh-text">${lhLines.map(l=>`<div>${esc(l)}</div>`).join('')}</div>
+          ${lhLogo ? `<img class="cover-lh-logo" src="${lhLogo}" alt="شعار">` : ''}
+        </div>` : ''}
+      ${studentFieldsHTML}
+      <div class="cover-center">
+        <div class="cover-ornament">۞</div>
+        <h1 class="cover-title">سجل القرار</h1>
+        <div class="cover-subtitle">محاكي حالات ريادة الأعمال</div>
+        <div class="cover-badge">${withSolution ? '١٠٠ حالة تدريبية عملية — نسخة مع الحل النموذجي' : '١٠٠ حالة تدريبية عملية — نسخة تدريبية للحل الذاتي'}</div>
+        <div class="cover-meta">
+          <div>تاريخ الإصدار: ${genDate}</div>
+        </div>
+      </div>
+    </section>`;
+
+  const tocGroups = GROUPS.map(g=>{
+    const items = CASES.filter(c=>c.g===g);
+    return `<div class="toc-group">
+      <div class="toc-group-title">${esc(g)}</div>
+      ${items.map(c=>`<div class="toc-row"><span class="toc-num">${String(c.id).padStart(2,'0')}</span><span class="toc-name">${esc(c.title)}</span></div>`).join('')}
+    </div>`;
+  }).join('');
+  const tocHTML = `
+    <section class="book-page toc-page">
+      <h2 class="toc-title">فهرس الحالات</h2>
+      <div class="toc-grid">${tocGroups}</div>
+    </section>`;
+
+  const casesHTML = CASES.map(c=>`
+    <section class="book-page case-page">
+      <div class="case-page-eyebrow">حالة رقم ${String(c.id).padStart(2,'0')} — ${esc(c.g)}</div>
+      <h2 class="case-page-title">${esc(c.title)}</h2>
+      <div class="case-page-block scenario-block">
+        <div class="block-label">السيناريو</div>
+        <p>${esc(c.scenario)}</p>
+      </div>
+      <div class="case-page-block question-block">
+        <div class="block-label">السؤال المطروح</div>
+        <p class="q-text">${esc(c.q)}</p>
+      </div>
+      ${withSolution ? `
+      <div class="case-page-block model-block">
+        <div class="block-label">الحل النموذجي المقترح</div>
+        <p>${esc(c.model)}</p>
+      </div>
+      ${c.h ? `<div class="case-page-block wisdom-block">
+        <div class="block-label">حكمة</div>
+        <p>${esc(c.h)}</p>
+      </div>` : ''}
+      ` : `
+      <div class="case-page-block answer-block">
+        <div class="block-label">اقتراحك للحل</div>
+        <div class="answer-lines">
+          <div class="ans-line"></div><div class="ans-line"></div><div class="ans-line"></div>
+          <div class="ans-line"></div><div class="ans-line"></div><div class="ans-line"></div>
+          <div class="ans-line"></div><div class="ans-line"></div>
+        </div>
+      </div>
+      `}
+      <div class="case-page-footer">سجل القرار — محاكي حالات ريادة الأعمال · صفحة الحالة ${String(c.id).padStart(3,'0')} من ١٠٠</div>
+    </section>
+  `).join('');
+
+  const glossarySorted = [...GLOSSARY].sort((a,b)=> a.term.localeCompare(b.term, 'ar'));
+  const glossaryHTML = `
+    <section class="book-page glossary-page">
+      <h2 class="toc-title">قاموس المصطلحات</h2>
+      <div class="glossary-book-grid">
+        ${glossarySorted.map(g=>`
+          <div class="glossary-book-item">
+            <div class="gb-term">${esc(g.term)}</div>
+            <div class="gb-def">${esc(g.def)}</div>
+          </div>
+        `).join('')}
+      </div>
+    </section>`;
+
+  return `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>سجل القرار — محاكي حالات ريادة الأعمال (كتاب الحالات)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Markazi+Text:wght@500;700&family=Tajawal:wght@400;500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+:root{
+  --ink:#26241d; --parchment:#efe7d6; --navy:#1c2b3a; --navy-soft:#28405a;
+  --brass:#a97c34; --brass-bright:#c99a4a; --stamp-red:#9c3f34; --line:rgba(28,43,58,0.18);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:#fff;color:var(--ink);font-family:'Tajawal',sans-serif;}
+@page{ size:A4; margin:16mm 14mm; }
+.book-page{
+  page-break-after:always; position:relative; min-height:265mm;
+  padding:6mm 2mm 14mm;
+}
+.book-page:last-child{page-break-after:auto;}
+
+/* Cover */
+.cover-page{
+  display:flex; flex-direction:column; justify-content:space-between; align-items:center;
+  text-align:center; min-height:265mm; border:2.5px solid var(--navy); outline:1px solid var(--brass);
+  outline-offset:-8px; padding:14mm 10mm;
+}
+.cover-letterhead{
+  width:100%; display:flex; justify-content:flex-start; align-items:flex-start; gap:14px;
+  border-bottom:1px solid var(--line); padding-bottom:10px;
+}
+.cover-lh-text{flex:none; text-align:center; font-family:'IBM Plex Sans Arabic',sans-serif; color:var(--navy); font-size:12.5px; line-height:1.9; font-weight:600;}
+.cover-lh-text div:first-child{font-weight:700; font-size:13.5px; color:var(--navy-soft);}
+.cover-lh-logo{width:56px;height:56px;object-fit:contain;margin-inline-start:auto;}
+.cover-center{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;}
+.cover-ornament{font-size:40px; color:var(--brass); opacity:0.7;}
+.cover-title{font-family:'Markazi Text',serif; font-weight:700; font-size:64px; color:var(--navy); margin:0;}
+.cover-subtitle{font-family:'IBM Plex Sans Arabic',sans-serif; font-size:20px; color:var(--navy-soft); letter-spacing:1px;}
+.cover-badge{
+  font-family:'IBM Plex Sans Arabic',sans-serif; font-size:14px; color:#fff; background:var(--brass);
+  padding:8px 22px; border-radius:30px; font-weight:700; margin-top:8px;
+}
+.cover-meta{margin-top:24px; font-family:'IBM Plex Sans Arabic',sans-serif; font-size:13px; color:var(--navy-soft); line-height:2;}
+.cover-student-fields{
+  width:100%; display:flex; flex-direction:column; gap:14px; margin-top:8px;
+  padding:14px 4px 4px; border-bottom:1px dashed var(--line);
+}
+.cover-field{display:flex; align-items:baseline; gap:10px;}
+.cf-label{font-family:'IBM Plex Sans Arabic',sans-serif; font-weight:700; font-size:13px; color:var(--navy); flex:none; min-width:90px;}
+.cf-line{flex:1; border-bottom:1.5px dotted var(--navy-soft); height:1px;}
+
+/* Blank answer box (no-solution training version) */
+.answer-block{margin-top:6px;}
+.answer-lines{border:1px solid var(--line); border-radius:3px; padding:10px 14px 4px;}
+.ans-line{border-bottom:1px dotted var(--navy-soft); height:26px;}
+.ans-line:last-child{border-bottom:none;}
+
+/* TOC */
+.toc-title{font-family:'Markazi Text',serif; font-size:36px; color:var(--navy); text-align:center; border-bottom:3px double var(--navy); padding-bottom:14px; margin-bottom:20px;}
+.toc-grid{display:grid; grid-template-columns:1fr 1fr; gap:0 30px;}
+.toc-group{margin-bottom:14px; break-inside:avoid;}
+.toc-group-title{font-family:'IBM Plex Sans Arabic',sans-serif; font-weight:700; font-size:12px; letter-spacing:1px; color:var(--brass); border-bottom:1px solid var(--line); padding-bottom:4px; margin-bottom:6px;}
+.toc-row{display:flex; align-items:baseline; gap:8px; font-size:12.5px; padding:2.5px 0;}
+.toc-num{font-family:'IBM Plex Sans Arabic',sans-serif; color:var(--navy-soft); font-size:11px; width:20px; flex:none;}
+.toc-name{color:var(--ink);}
+
+/* Case pages */
+.case-page-eyebrow{font-family:'IBM Plex Sans Arabic',sans-serif; font-size:11px; letter-spacing:2px; color:var(--brass); text-transform:uppercase; margin-bottom:6px;}
+.case-page-title{font-family:'Markazi Text',serif; font-weight:700; font-size:30px; color:var(--navy); margin:0 0 16px; border-bottom:3px double var(--navy); padding-bottom:12px;}
+.case-page-block{margin-bottom:14px;}
+.block-label{font-family:'IBM Plex Sans Arabic',sans-serif; font-weight:700; font-size:12px; color:var(--navy-soft); margin-bottom:5px; display:flex; align-items:center; gap:8px;}
+.block-label::after{content:'';flex:1;height:1px;background:var(--line);}
+.case-page-block p{margin:0; font-size:13.5px; line-height:2;}
+.scenario-block{background:var(--parchment); border:1px solid var(--line); border-radius:3px; padding:12px 14px;}
+.question-block .q-text{font-weight:700; font-size:14.5px;}
+.model-block{background:#f8f4ea; border:1px solid var(--brass); border-radius:3px; padding:12px 14px;}
+.wisdom-block{background:var(--navy); color:var(--parchment); border-radius:3px; padding:12px 14px; border-inline-start:4px solid var(--brass-bright); font-family:'Markazi Text',serif; font-weight:700; font-size:15px;}
+.wisdom-block .block-label{color:var(--brass-bright);}
+.case-page-footer{position:absolute; bottom:6mm; left:0; right:0; text-align:center; font-family:'IBM Plex Sans Arabic',sans-serif; font-size:10px; color:var(--navy-soft); border-top:1px solid var(--line); padding-top:6px;}
+
+/* Glossary page */
+.glossary-book-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px 26px;}
+.glossary-book-item{break-inside:avoid; margin-bottom:10px;}
+.gb-term{font-family:'Markazi Text',serif; font-weight:700; font-size:16px; color:var(--navy); margin-bottom:3px;}
+.gb-def{font-size:11.5px; line-height:1.85; color:var(--ink);}
+</style>
+</head>
+<body>
+${coverHTML}
+${tocHTML}
+${casesHTML}
+${glossaryHTML}
+${bookAutoPrintTag()}
+</body>
+</html>`;
+}
+
+function bookAutoPrintTag(){
+  var openTag = '<' + 'script' + '>';
+  var closeTag = '<' + '/script' + '>';
+  var code = "window.onload = function(){ setTimeout(function(){ window.focus(); window.print(); }, 600); };";
+  return openTag + code + closeTag;
+}
+
+function exportCasesAsBook(withSolution){
+  const overlay = document.createElement('div');
+  overlay.className = 'fab-progress-overlay';
+  overlay.innerHTML = '<div class="fab-progress-box">جارٍ تجهيز الكتاب...<br><span style="font-size:12px;color:var(--navy-soft);">سيفتح الملف في نافذة جديدة، ثم استخدم «طباعة → حفظ كملف PDF»</span></div>';
+  document.body.appendChild(overlay);
+  setTimeout(()=>{
+    try{
+      const html = buildBookHTML(withSolution);
+      const w = window.open('', '_blank');
+      if(!w){
+        alert('يرجى السماح بالنوافذ المنبثقة (Pop-ups) لهذا الموقع لإتمام تصدير الكتاب.');
+      } else {
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+      }
+    } finally {
+      overlay.remove();
+    }
+  }, 50);
+}
+
+document.getElementById('pdfFab').onclick = ()=>{
+  document.getElementById('pdfExportModal').style.display = 'flex';
+};
+document.getElementById('pdfExportWithSolution').onclick = ()=>{
+  document.getElementById('pdfExportModal').style.display = 'none';
+  exportCasesAsBook(true);
+};
+document.getElementById('pdfExportNoSolution').onclick = ()=>{
+  document.getElementById('pdfExportModal').style.display = 'none';
+  exportCasesAsBook(false);
+};
+document.getElementById('pdfExportCancel').onclick = ()=>{
+  document.getElementById('pdfExportModal').style.display = 'none';
+};
+document.getElementById('pdfExportModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'pdfExportModal') document.getElementById('pdfExportModal').style.display = 'none';
+});
+
+/* ---------------- HELP / USAGE GUIDE (trainer only) ---------------- */
+const HELP_SECTIONS = [
+  {
+    key:'overview', title:'نظرة عامة على التطبيق',
+    html:`
+      <p>«سجل القرار» أداة عرض وتحضير بيد المدرب فقط، تحتوي على <b>100 حالة عملية</b> في ريادة الأعمال موزّعة على 27 محورًا (السيولة، نقطة التعادل، بوابات الدفع، الشراكة بين المؤسسين، الضرائب والزكاة، وغيرها). كل حالة فيها سيناريو واقعي وسؤال مفتوح، وحل نموذجي مصحوب بـ"حكمة" ختامية تلخّص الدرس المستفاد.</p>
+      <p>لا يوجد في التطبيق أي تسجيل دخول أو كلمة مرور — يفتحه المدرب مباشرة ويبدأ العرض فورًا، مصمّم أصلاً للعرض على الشاشة (بروجكتر) أثناء الحصة، ولا يتفاعل معه المتدرب مباشرة إطلاقًا.</p>
+      <div class="tip">لا يحتاج التطبيق أي تنصيب أو اتصال إنترنت مستمر — هو ملف واحد (HTML) يفتح مباشرة من المتصفح، حتى بدون إنترنت بعد أول تحميل.</div>
+    `
+  },
+  {
+    key:'presenting', title:'العرض على المتدربين خطوة بخطوة',
+    html:`
+      <ol>
+        <li>عند فتح التطبيق تظهر مباشرة قائمة الحالات (يمين الشاشة) وأول حالة معروضة في المنتصف — بدون أي شاشة دخول تفصل المدرب عنها.</li>
+        <li>يختار المدرب حالة من القائمة الجانبية (مقسّمة حسب المحور)، فتظهر بطاقة الحالة: عنوان، سيناريو، والسؤال المطروح.</li>
+        <li>يعرض المدرب السيناريو والسؤال بالبروجكتر، ويناقشه مع المتدربين شفهيًا أو عبر مشاركته في قروب (انظر قسم "مشاركة الحالة" أدناه).</li>
+        <li>بعد النقاش، يضغط المدرب زر "عرض الحل النموذجي" فيظهر الحل المقترح والحكمة الختامية أسفل السؤال مباشرة على نفس الشاشة.</li>
+        <li>القائمة الجانبية للحالات لها شريط تمرير مستقل عن محتوى الحالة المعروضة، فيمكن تصفّح الحالات دون أن يتحرك محتوى الحالة المفتوحة على الشاشة أثناء العرض.</li>
+      </ol>
+      <div class="tip">في وضع الجوال (شاشة ضيقة)، تظهر قائمة الحالات وحدها أولاً؛ بمجرد اختيار حالة تختفي القائمة ويظهر محتوى الحالة فقط، مع زر "◀ رجوع لقائمة الحالات" أعلى الحالة للعودة للقائمة.</div>
+    `
+  },
+  {
+    key:'glossary', title:'قاموس المصطلحات التفاعلي',
+    html:`
+      <p>أي مصطلح مالي أو ريادي (مثل: نقطة التعادل، هامش الربح، CAC، LTV، جهاز POS...) يظهر داخل نص أي حالة يكون <b>مظللاً</b> تلقائيًا. عند تمرير المؤشر فوقه تظهر بطاقة تعريف صغيرة، وعند النقر عليه "يُثبَّت" التعريف ظاهرًا حتى يُنقر في مكان آخر — مفيد جدًا أثناء العرض للتوقف وشرح مصطلح للمتدربين فورًا.</p>
+      <p>زر "📘 قاموس المصطلحات" أعلى الصفحة يفتح نافذة تعرض كل المصطلحات (24 مصطلحًا حاليًا) وتعريفاتها دفعة واحدة، متاحة في أي وقت دون الحاجة للبحث داخل الحالات.</p>
+      <div class="tip">المصطلحات التي لها اختصار إنجليزي (مثل CAC وLTV وPOS وFX Fee) تتضمن تعريفاتها العبارة الإنجليزية الكاملة، حتى يفهم رائد الأعمال أصل المصطلح لا اختصاره فقط.</div>
+    `
+  },
+  {
+    key:'config', title:'التهيئة: الترويسة والشعار',
+    html:`
+      <p>زر "⚙️ التهيئة" أعلى الصفحة يفتح نافذة إعدادات الترويسة، وفيها:</p>
+      <ul>
+        <li>مفتاح "إظهار الترويسة في أعلى التطبيق" يتحكم بظهورها من عدمه بالكامل.</li>
+        <li>أربعة حقول نصية قابلة للتعديل الكامل (الاسم الافتراضي: المملكة العربية السعودية / المؤسسة العامة للتدريب التقني والمهني / الكلية التقنية بأبها / قسم تقنية الأعمال) — تُغيَّر لتناسب أي جهة تدريبية أو تعليمية أخرى.</li>
+        <li>الشعار: يمكن رفع صورة (PNG/JPG) من جهاز المدرب مباشرة، أو "إخفاء مكان الشعار كليًا" إن لم تتوفر صورة.</li>
+        <li>الترويسة تظهر مثبّتة في الركن الأيمن العلوي من الصفحة (النص يمين، الشعار يسار النص).</li>
+      </ul>
+    `
+  },
+  {
+    key:'pdf-export', title:'تصدير الحالات كملف PDF (الكرة العائمة 📖)',
+    html:`
+      <p>الكرة العائمة (أيقونة الكتاب 📖) أسفل يسار الشاشة تفتح نافذة صغيرة لاختيار نوع النسخة قبل التصدير:</p>
+      <ul>
+        <li><b>📖 نسخة كاملة مع الحل النموذجي والحكمة:</b> غلاف + فهرس + صفحة مستقلة لكل حالة (السيناريو، السؤال، الحل النموذجي، الحكمة) + صفحة قاموس المصطلحات في النهاية — مرجع كامل للمدرب نفسه.</li>
+        <li><b>📝 نسخة تدريبية بدون حل:</b> نفس الغلاف والفهرس، لكن غلاف الكتاب يتضمن ثلاث خانات مسطّرة بنقاط لتعبئتها يدويًا (اسم المتدرب، الرقم الأكاديمي، الشعبة)، وكل صفحة حالة تعرض السيناريو والسؤال فقط متبوعَين بمربع كتابة مسطّر بنقاط بدل الحل النموذجي — مثالية لطباعة حقيبة تدريبية توزَّع على المتدربين ليحلّوها بخط اليد.</li>
+      </ul>
+      <p>بعد اختيار النسخة، يفتح المتصفح تلقائيًا مربع طباعة النظام — يُختار "حفظ كملف PDF" بدلاً من طابعة فعلية للحصول على الملف.</p>
+    `
+  },
+  {
+    key:'share-case', title:'مشاركة الحالة عبر واتساب أو تيليجرام',
+    html:`
+      <p>بما أن التطبيق بيد المدرب فقط ولا يتصل به المتدربون مباشرة، فهذه هي الوسيلة الأساسية لإيصال الحالات لهم والحصول على إجاباتهم — عبر قروب واتساب أو تيليجرام يستخدمونه أصلاً، بدون الحاجة لأي خادم أو اتصال إنترنت مشترك بين الطرفين.</p>
+      <p><b>مشاركة نص الحالة (بدون حل):</b> زر "📤 مشاركة الحالة" موجود بجوار زر "عرض الحل النموذجي" أسفل السؤال المطروح مباشرة. الضغط عليه يفتح نافذة فيها عدة خيارات:</p>
+      <ul>
+        <li><b>📋 نسخ النص:</b> ينسخ نصًا جاهزًا (عنوان الحالة، المحور، السيناريو، السؤال)، يليه <b>خانة "الإجابة"</b> وبعدها سطران فارغان ليكتب المتدرب إجابته مباشرة تحتها، ثم خانات <b>الاسم</b> و<b>الرقم الأكاديمي</b> و<b>الشعبة</b> ليعبّئها قبل الإرسال — كل هذا جاهز للصقه في أي مكان.</li>
+        <li><b>🟢 مشاركة عبر واتساب:</b> يفتح واتساب مباشرة مع النص كاملاً (بما فيه خانة الإجابة وبيانات المتدرب) جاهزًا داخل صندوق الرسالة.</li>
+        <li><b>🔵 مشاركة عبر تيليجرام:</b> نفس الفكرة برابط تيليجرام الرسمي للمشاركة.</li>
+        <li><b>🖼️ مشاركة نفس البيانات كبطاقة (صورة):</b> ينشئ بطاقة مصمّمة (عنوان الحالة، السؤال، مربع فارغ للإجابة، وخانات الاسم/الرقم الأكاديمي/الشعبة) كصورة PNG جاهزة، ويحاول مشاركتها مباشرة من الجهاز إن كان يدعم ذلك، وإلا ينزّلها كملف صورة لإرفاقها يدويًا في واتساب أو تيليجرام — مفيدة لمن يفضّل شكل بطاقة مرئية بدل نص عادي.</li>
+      </ul>
+      <p><b>مشاركة الحل النموذجي:</b> بعد الضغط على "عرض الحل النموذجي" لأي حالة، يظهر زر "📤 مشاركة الحل النموذجي" أسفل الحل مباشرة، بنفس خيارات النص والبطاقة، ليُرسل الحل والحكمة جاهزين في القروب بعد مناقشة إجابات المتدربين.</p>
+      <p>عملياً: المتدرب يستلم نص الحالة (أو بطاقتها) في قروب واتساب أو تيليجرام مع خانات جاهزة لبياناته وإجابته، يكتبها ويرسلها في نفس المحادثة، ويقيّمها المدرب بعينه هناك مباشرة — دون أي حاجة لفتح المتدرب للتطبيق إطلاقًا.</p>
+      <div class="tip">تُستخدم هذه الميزة جنبًا إلى جنب مع تصدير "الحقيبة التدريبية" (PDF بدون حل) لمن يفضّل الطباعة الورقية بدل واتساب/تيليجرام.</div>
+    `
+  },
+  {
+    key:'help-fab', title:'الكرة العائمة الثانية: هذا الدليل نفسه (❔)',
+    html:`
+      <p>الكرة العائمة الثانية (علامة الاستفهام ❔، فوق كرة تصدير الـPDF مباشرة) تفتح هذه النافذة التي تقرأها الآن — مرجع سريع لأي سؤال حول طريقة استخدام التطبيق دون الحاجة للرجوع لأي مصدر خارجي. تفتح هذه النافذة تلقائياً أيضاً عند أول فتح للتطبيق.</p>
+    `
+  },
+  {
+    key:'contact', title:'الكرة العائمة الثالثة: التواصل مع معد التطبيق (✉️)',
+    html:`
+      <p>الكرة العائمة الثالثة (أيقونة ✉️، فوق كرة الدليل) تفتح بطاقة تعريف بمعد التطبيق: <b>كليب بن أحمد الزهراني</b>، ومعها بريد إلكتروني للمقترحات والملاحظات: <b>kmasskmass@gmail.com</b>. الضغط على البريد يفتح برنامج البريد الافتراضي في الجهاز برسالة جاهزة للإرسال.</p>
+    `
+  },
+  {
+    key:'faq', title:'أسئلة شائعة',
+    html:`
+      <p><b>س: كيف أعرض حالة على المتدربين في الحصة؟</b><br>ج: افتح التطبيق بالبروجكتر، اختر الحالة من القائمة الجانبية، اعرض السيناريو والسؤال، ثم اضغط "عرض الحل النموذجي" بعد النقاش.</p>
+      <p><b>س: كيف يحلّ المتدربون الحالة ويرسلون إجاباتهم؟</b><br>ج: عبر زر "📤 مشاركة الحالة" أرسل نص الحالة لقروب واتساب أو تيليجرام الخاص بالشعبة، ويرسلون إجاباتهم في نفس المحادثة.</p>
+      <p><b>س: هل يحتاج المتدرب فتح التطبيق أو تسجيل دخول؟</b><br>ج: لا، التطبيق مخصص للمدرب فقط. المتدرب يتعامل مع نص الحالة الذي يستلمه في واتساب/تيليجرام فقط.</p>
+      <p><b>س: عدّلت الترويسة ولم يظهر التغيير؟</b><br>ج: أعد تحميل الصفحة (F5) — الإعدادات تُقرأ عند فتح الصفحة فقط.</p>
+      <p><b>س: هل يمكن استخدام التطبيق بدون إنترنت؟</b><br>ج: نعم، بعد أول تحميل للصفحة يعمل التطبيق بالكامل دون اتصال، ما عدا استيراد خطوط جوجل الزخرفية إن لم تكن محفوظة مسبقًا في المتصفح.</p>
+    `
+  }
+];
+
+function renderHelpModal(){
+  const toc = document.getElementById('helpTOC');
+  const body = document.getElementById('helpBody');
+  toc.innerHTML = HELP_SECTIONS.map(s=>`<a href="#help-${s.key}">${s.title}</a>`).join('');
+  body.innerHTML = HELP_SECTIONS.map((s,i)=>`
+    <div class="help-section" id="help-${s.key}">
+      <h4><span class="num">${i+1}</span>${s.title}</h4>
+      ${s.html}
+    </div>
+  `).join('');
+}
+function openHelpModal(){
+  renderHelpModal();
+  document.getElementById('helpModal').style.display = 'flex';
+}
+document.getElementById('helpFab').onclick = openHelpModal;
+document.getElementById('helpCloseBtn').onclick = ()=>{
+  document.getElementById('helpModal').style.display = 'none';
+};
+document.getElementById('helpModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'helpModal') document.getElementById('helpModal').style.display = 'none';
+});
+
+/* ---------------- CONTACT DEVELOPER ---------------- */
+document.getElementById('contactFab').onclick = ()=>{
+  document.getElementById('contactModal').style.display = 'flex';
+};
+document.getElementById('contactCloseBtn').onclick = ()=>{
+  document.getElementById('contactModal').style.display = 'none';
+};
+document.getElementById('contactModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'contactModal') document.getElementById('contactModal').style.display = 'none';
+});
+
+/* ---------------- GLOSSARY TOOLTIP + MODAL ---------------- */
+function positionTooltip(tooltip, target){
+  const r = target.getBoundingClientRect();
+  const ttWidth = 300;
+  let left = r.left + window.scrollX;
+  if(left + ttWidth > window.scrollX + document.documentElement.clientWidth - 10){
+    left = window.scrollX + document.documentElement.clientWidth - ttWidth - 10;
+  }
+  if(left < 10) left = 10;
+  let top = r.bottom + window.scrollY + 8;
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + 'px';
+}
+function showTermTooltip(target){
+  const key = target.dataset.termKey;
+  const g = GLOSSARY.find(x=>x.key===key);
+  if(!g) return;
+  const tooltip = document.getElementById('termTooltip');
+  tooltip.innerHTML = `<span class="tt-term">${g.term}</span>${g.def}`;
+  tooltip.classList.add('show');
+  positionTooltip(tooltip, target);
+  document.querySelectorAll('.term-highlight.term-active').forEach(el=>el.classList.remove('term-active'));
+  target.classList.add('term-active');
+}
+function hideTermTooltip(){
+  document.getElementById('termTooltip').classList.remove('show');
+  document.querySelectorAll('.term-highlight.term-active').forEach(el=>el.classList.remove('term-active'));
+}
+document.addEventListener('mouseover', (e)=>{
+  const t = e.target.closest('.term-highlight');
+  if(t) showTermTooltip(t);
+});
+document.addEventListener('mouseout', (e)=>{
+  const t = e.target.closest('.term-highlight');
+  if(t && !t.contains(e.relatedTarget) && !pinnedTermKey) hideTermTooltip();
+});
+let pinnedTermKey = null;
+document.addEventListener('click', (e)=>{
+  const t = e.target.closest('.term-highlight');
+  if(t){
+    e.stopPropagation();
+    if(pinnedTermKey === t.dataset.termKey){
+      pinnedTermKey = null;
+      hideTermTooltip();
+    } else {
+      pinnedTermKey = t.dataset.termKey;
+      showTermTooltip(t);
+    }
+    return;
+  }
+  if(!e.target.closest('.term-tooltip')){
+    pinnedTermKey = null;
+    hideTermTooltip();
+  }
+});
+window.addEventListener('scroll', hideTermTooltip, true);
+
+function renderGlossaryList(){
+  const list = document.getElementById('glossaryList');
+  const sorted = [...GLOSSARY].sort((a,b)=> a.term.localeCompare(b.term, 'ar'));
+  list.innerHTML = sorted.map(g=>`
+    <div class="glossary-item">
+      <div class="g-term">${g.term}</div>
+      <div class="g-def">${g.def}</div>
+    </div>
+  `).join('');
+}
+document.getElementById('btnGlossary').onclick = ()=>{
+  renderGlossaryList();
+  document.getElementById('glossaryModal').style.display='flex';
+};
+document.getElementById('glossaryCloseBtn').onclick = ()=>{
+  document.getElementById('glossaryModal').style.display='none';
+};
+
+/* ---------------- BOOT ---------------- */
+(async function boot(){
+  await loadLetterhead();
+  renderLetterhead();
+  renderNav();
+  renderCase();
+  openHelpModal(); // يظهر الدليل تلقائياً عند أول فتح للتطبيق
+})();
+</script>
+</body>
+</html>
